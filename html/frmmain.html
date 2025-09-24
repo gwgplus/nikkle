@@ -596,6 +596,9 @@
           $("#judgmentText").hide();
          
           $(".judgment-btn").show();
+          $(".select-btn").show();
+          
+          $("#selectText").hide();
           hideAllPanels();
         }
         // 判定按鈕事件
@@ -619,57 +622,25 @@
           $("#btnSave").show();
         });
         $("#btnMark").on("click", function() {
-          console.log("btnMark clicked - before operations");
+          setJudgment("fold");
           $(".select-btn").hide();
           $("#selectText").text("判定為摺痕");
           $("#selectText").show();
-          console.log("About to show appearancePanel");
-          
-          // 強制設置樣式並顯示面板
-          $("#appearancePanel").css("display", "block").show();
-          console.log("appearancePanel visible:", $("#appearancePanel").is(":visible"));
-          console.log("appearancePanel display style:", $("#appearancePanel").css("display"));
-          
-          // 延遲調用 API，給面板更多時間顯示
-          setTimeout(function() {
-            setJudgment("fold");
-            // 再次確保面板顯示
-            setTimeout(function() {
-              console.log("Checking appearancePanel after API call");
-              console.log("appearancePanel visible:", $("#appearancePanel").is(":visible"));
-              console.log("appearancePanel display style:", $("#appearancePanel").css("display"));
-              if ($("#appearancePanel").is(":hidden")) {
-                console.log("Re-showing appearancePanel with !important");
-                $("#appearancePanel").css("display", "block !important").show();
-              }
-            }, 200);
-          }, 100);
+          $("#appearancePanel").show();
         });
         $("#btnCheckError").on("click", function() {
+          setJudgment("ocr_error");
           $(".select-btn").hide();
           $("#selectText").text("判定為辨識錯誤");
           $("#selectText").show();
           $("#appearancePanel").show();
-          setJudgment("ocr_error");
-          // 強制確保面板顯示
-          setTimeout(function() {
-            if ($("#appearancePanel").is(":hidden")) {
-              $("#appearancePanel").show();
-            }
-          }, 50);
         });
         $("#btnCantOCR").on("click", function() {
+          setJudgment("cannot_ocr");
           $(".select-btn").hide();
           $("#selectText").text("判定為無法辯識");
           $("#selectText").show();
           $("#appearancePanel").show();
-          setJudgment("cannot_ocr");
-          // 強制確保面板顯示
-          setTimeout(function() {
-            if ($("#appearancePanel").is(":hidden")) {
-              $("#appearancePanel").show();
-            }
-          }, 50);
         });
         // 外觀判定按鈕
         $("#btnOK").on("click", function() {
@@ -1032,18 +1003,7 @@
                     action_data: {},
                   })
                 );
-                try {
-                  const response = JSON.parse(result);
-                  if (response.success) {
-                    console.log("匯出視窗開啟成功:", response.message);
-                  } else {
-                    console.error("匯出視窗開啟失敗:", response.error);
-                    showAlert("匯出視窗開啟失敗: " + response.error);
-                  }
-                } catch (error) {
-                  console.error("解析匯出回應失敗:", error);
-                  showAlert("匯出功能發生錯誤");
-                }
+                
               }
             });
           $("#btnOperator")
