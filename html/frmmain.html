@@ -624,22 +624,26 @@
           $("#selectText").text("判定為摺痕");
           $("#selectText").show();
           console.log("About to show appearancePanel");
-          $("#appearancePanel").show();
-          console.log("appearancePanel visible:", $("#appearancePanel").is(":visible"));
           
-          // 使用 requestAnimationFrame 確保 DOM 更新後再調用 API
-          requestAnimationFrame(function() {
+          // 強制設置樣式並顯示面板
+          $("#appearancePanel").css("display", "block").show();
+          console.log("appearancePanel visible:", $("#appearancePanel").is(":visible"));
+          console.log("appearancePanel display style:", $("#appearancePanel").css("display"));
+          
+          // 延遲調用 API，給面板更多時間顯示
+          setTimeout(function() {
             setJudgment("fold");
             // 再次確保面板顯示
             setTimeout(function() {
               console.log("Checking appearancePanel after API call");
               console.log("appearancePanel visible:", $("#appearancePanel").is(":visible"));
+              console.log("appearancePanel display style:", $("#appearancePanel").css("display"));
               if ($("#appearancePanel").is(":hidden")) {
-                console.log("Re-showing appearancePanel");
-                $("#appearancePanel").show();
+                console.log("Re-showing appearancePanel with !important");
+                $("#appearancePanel").css("display", "block !important").show();
               }
-            }, 100);
-          });
+            }, 200);
+          }, 100);
         });
         $("#btnCheckError").on("click", function() {
           $(".select-btn").hide();
