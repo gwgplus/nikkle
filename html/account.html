@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>帳號管理系統</title>
+
+    <!-- 引入 jQuery 和 QWebChannel -->
+    <script src="script/jquery-3.7.1.slim.min.js"></script>
+    <script src="script/qwebchannel.js"></script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "微軟正黑體", "Microsoft JhengHei", Arial, sans-serif;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        font-size: 1.1em;
+        opacity: 0.9;
+      }
+
+      .toolbar {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+
+      .search-box {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .search-box input {
+        padding: 10px 15px;
+        border: 2px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        min-width: 200px;
+      }
+
+      .search-box input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      .btn-primary {
+        background-color: #667eea;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background-color: #5a6fd8;
+        transform: translateY(-2px);
+      }
+
+      .btn-success {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .btn-success:hover {
+        background-color: #218838;
+        transform: translateY(-2px);
+      }
+
+      .btn-warning {
+        background-color: #ffc107;
+        color: #212529;
+      }
+
+      .btn-warning:hover {
+        background-color: #e0a800;
+        transform: translateY(-2px);
+      }
+
+      .btn-danger {
+        background-color: #dc3545;
+        color: white;
+      }
+
+      .btn-danger:hover {
+        background-color: #c82333;
+        transform: translateY(-2px);
+      }
+
+      .btn-info {
+        background-color: #17a2b8;
+        color: white;
+      }
+
+      .btn-info:hover {
+        background-color: #138496;
+        transform: translateY(-2px);
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+      }
+
+      .table-container {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .table th {
+        background-color: #f8f9fa;
+        padding: 15px;
+        text-align: left;
+        font-weight: bold;
+        border-bottom: 2px solid #dee2e6;
+      }
+
+      .table td {
+        padding: 15px;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      .table tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      .status-badge {
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+
+      .status-admin {
+        background-color: #dc3545;
+        color: white;
+      }
+
+      .status-user {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .status-password {
+        background-color: #ffc107;
+        color: #212529;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+
+      .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        padding: 30px;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f8f9fa;
+      }
+
+      .modal-title {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .close {
+        color: #aaa;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .close:hover {
+        color: #000;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+      }
+
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+      }
+
+      .form-group input:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .form-row {
+        display: flex;
+        gap: 15px;
+      }
+
+      .form-row .form-group {
+        flex: 1;
+      }
+
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .checkbox-group input[type="checkbox"] {
+        width: auto;
+      }
+
+      .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid #f8f9fa;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+        color: #666;
+      }
+
+      .loading::after {
+        content: "";
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-left: 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .alert {
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        display: none;
+      }
+
+      .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .pagination button {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        background-color: white;
+        cursor: pointer;
+        border-radius: 3px;
+      }
+
+      .pagination button:hover {
+        background-color: #f8f9fa;
+      }
+
+      .pagination button.active {
+        background-color: #667eea;
+        color: white;
+        border-color: #667eea;
+      }
+
+      .pagination button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- 標題 -->
+      <div class="header">
+        <h1>帳號管理系統</h1>
+        <p>管理使用者帳號、權限和設定</p>
+      </div>
+
+      <!-- 訊息提示 -->
+      <div id="alert" class="alert"></div>
+
+      <!-- 工具列 -->
+      <div class="toolbar">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="搜尋帳號或姓名..." />
+          <button class="btn btn-primary" onclick="searchAccounts()">
+            搜尋
+          </button>
+          <button class="btn btn-warning" onclick="clearSearch()">清除</button>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-info" onclick="reloadData()">重新載入</button>
+          <button class="btn btn-success" onclick="showAddModal()">
+            新增帳號
+          </button>
+        </div>
+      </div>
+
+      <!-- 載入中 -->
+      <div id="loading" class="loading">載入中...</div>
+
+      <!-- 表格容器 -->
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>帳號</th>
+              <th>姓名</th>
+              <th>權限</th>
+              <th>密碼設定</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="accountTableBody">
+            <!-- 動態載入資料 -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 分頁 -->
+      <div class="pagination" id="pagination">
+        <!-- 動態載入分頁 -->
+      </div>
+    </div>
+
+    <!-- 新增/編輯帳號模態框 -->
+    <div id="accountModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" id="modalTitle">新增帳號</h2>
+          <span class="close" onclick="closeModal()">&times;</span>
+        </div>
+        <form id="accountForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="accountId">帳號 *</label>
+              <input type="text" id="accountId" name="Account" required />
+            </div>
+            <div class="form-group">
+              <label for="accountName">姓名 *</label>
+              <input type="text" id="accountName" name="Name" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="accountPassword"
+                >密碼 <span id="passwordRequired">*</span></label
+              >
+              <input
+                type="password"
+                id="accountPassword"
+                name="Password"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="accountConfirmPassword"
+                >確認密碼 <span id="confirmPasswordRequired">*</span></label
+              >
+              <input type="password" id="accountConfirmPassword" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="accountIsAdmin">權限</label>
+              <select id="accountIsAdmin" name="IsAdmin">
+                <option value="0">一般使用者</option>
+                <option value="1">管理員</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="accountNeedPassword">密碼設定</label>
+              <select id="accountNeedPassword" name="NeedPassword">
+                <option value="1">需要密碼</option>
+                <option value="0">不需要密碼</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-warning"
+              onclick="closeModal()"
+            >
+              取消
+            </button>
+            <button type="submit" class="btn btn-success">儲存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 確認刪除模態框 -->
+    <div id="deleteModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">確認刪除</h2>
+          <span class="close" onclick="closeDeleteModal()">&times;</span>
+        </div>
+        <p>您確定要刪除帳號 <strong id="deleteAccountName"></strong> 嗎？</p>
+        <p>此操作無法復原。</p>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-warning"
+            onclick="closeDeleteModal()"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger"
+            onclick="confirmDelete()"
+          >
+            確認刪除
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 全域變數
+      let accountBridge = null;
+      let currentPage = 1;
+      let pageSize = 10;
+      let totalAccounts = 0;
+      let editingAccountId = null;
+      let deletingAccountId = null;
+
+      // 初始化
+      $(document).ready(function () {
+        initWebChannel();
+      });
+
+      // 初始化 WebChannel
+      function initWebChannel() {
+        if (typeof qt !== "undefined" && qt.webChannelTransport) {
+          if (typeof QWebChannel !== "undefined") {
+            try {
+              new QWebChannel(qt.webChannelTransport, function (channel) {
+                if (channel.objects.accountBridge) {
+                  accountBridge = channel.objects.accountBridge;
+                  // 初始化成功後載入資料
+                  loadAccounts();
+                } else {
+                  showAlert("accountBridge 不可用", "danger");
+                }
+              });
+            } catch (error) {
+              showAlert("QWebChannel 初始化錯誤: " + error.message, "danger");
+            }
+          } else {
+            showAlert("QWebChannel 未定義，請檢查 PyQt5 版本", "danger");
+          }
+        } else {
+          showAlert("qt.webChannelTransport 不可用", "danger");
+        }
+      }
+
+      // 載入帳號列表
+      function loadAccounts() {
+        if (!accountBridge) {
+          showAlert("橋接物件未初始化", "danger");
+          return;
+        }
+
+        showLoading(true);
+        const params = {
+          limit: pageSize,
+          offset: (currentPage - 1) * pageSize,
+        };
+
+        try {
+          accountBridge.get_accounts(JSON.stringify(params), function (result) {
+            try {
+              const data = JSON.parse(result);
+              if (data.success) {
+                displayAccounts(data.data);
+                updatePagination(data.total);
+              } else {
+                showAlert("載入帳號列表失敗: " + data.error, "danger");
+              }
+            } catch (parseError) {
+              showAlert("解析回應失敗: " + parseError.message, "danger");
+            }
+            showLoading(false);
+          });
+        } catch (error) {
+          showAlert("調用 get_accounts 時發生錯誤: " + error.message, "danger");
+          showLoading(false);
+        }
+      }
+
+      // 顯示帳號列表
+      function displayAccounts(accounts) {
+        const $tbody = $("#accountTableBody");
+        $tbody.empty();
+
+        if (accounts.length === 0) {
+          $tbody.html(
+            '<tr><td colspan="5" style="text-align: center; padding: 40px;">沒有找到帳號資料</td></tr>'
+          );
+          return;
+        }
+
+        accounts.forEach(function (account) {
+          const row = $("<tr>").html(`
+                    <td>${account.Account}</td>
+                    <td>${account.Name}</td>
+                    <td>
+                        <span class="status-badge ${
+                          account.IsAdmin ? "status-admin" : "status-user"
+                        }">
+                            ${account.IsAdmin ? "管理員" : "一般使用者"}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge ${
+                          account.NeedPassword
+                            ? "status-password"
+                            : "status-user"
+                        }">
+                            ${account.NeedPassword ? "需要密碼" : "不需要密碼"}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-warning" onclick="editAccount('${
+                          account.Account
+                        }')">編輯</button>
+                        <button class="btn btn-danger" onclick="deleteAccount('${
+                          account.Account
+                        }', '${account.Name}')">刪除</button>
+                    </td>
+                `);
+          $tbody.append(row);
+        });
+      }
+
+      // 更新分頁
+      function updatePagination(total) {
+        totalAccounts = total;
+        const totalPages = Math.ceil(total / pageSize);
+        const $pagination = $("#pagination");
+
+        if (totalPages <= 1) {
+          $pagination.hide();
+          return;
+        }
+
+        $pagination.show().empty();
+
+        // 上一頁
+        const $prevBtn = $("<button>")
+          .text("上一頁")
+          .prop("disabled", currentPage === 1);
+        $prevBtn.click(function () {
+          if (currentPage > 1) {
+            currentPage--;
+            loadAccounts();
+          }
+        });
+        $pagination.append($prevBtn);
+
+        // 頁碼
+        for (let i = 1; i <= totalPages; i++) {
+          if (
+            i === 1 ||
+            i === totalPages ||
+            (i >= currentPage - 2 && i <= currentPage + 2)
+          ) {
+            const $pageBtn = $("<button>")
+              .text(i)
+              .addClass(i === currentPage ? "active" : "");
+            $pageBtn.click(function () {
+              currentPage = i;
+              loadAccounts();
+            });
+            $pagination.append($pageBtn);
+          } else if (i === currentPage - 3 || i === currentPage + 3) {
+            const $ellipsis = $("<span>")
+              .text("...")
+              .css("padding", "8px 12px");
+            $pagination.append($ellipsis);
+          }
+        }
+
+        // 下一頁
+        const $nextBtn = $("<button>")
+          .text("下一頁")
+          .prop("disabled", currentPage === totalPages);
+        $nextBtn.click(function () {
+          if (currentPage < totalPages) {
+            currentPage++;
+            loadAccounts();
+          }
+        });
+        $pagination.append($nextBtn);
+      }
+
+      // 搜尋帳號
+      function searchAccounts() {
+        const keyword = $("#searchInput").val().trim();
+        if (!keyword) {
+          loadAccounts();
+          return;
+        }
+
+        if (!accountBridge) {
+          showAlert("橋接物件未初始化", "danger");
+          return;
+        }
+
+        showLoading(true);
+        const params = {
+          keyword: keyword,
+          limit: 100,
+        };
+
+        accountBridge.search_accounts(
+          JSON.stringify(params),
+          function (result) {
+            try {
+              const response = JSON.parse(result);
+              if (response.success) {
+                displayAccounts(response.data);
+                $("#pagination").hide();
+              } else {
+                showAlert("搜尋失敗: " + response.error, "danger");
+              }
+            } catch (parseError) {
+              showAlert("解析搜尋結果失敗: " + parseError.message, "danger");
+            }
+            showLoading(false);
+          }
+        );
+      }
+
+      // 清除搜尋
+      function clearSearch() {
+        $("#searchInput").val("");
+        currentPage = 1;
+        loadAccounts();
+      }
+
+      // 重新載入資料
+      function reloadData() {
+        if (!accountBridge) {
+          initWebChannel();
+        } else {
+          loadAccounts();
+        }
+      }
+
+      // 顯示新增帳號模態框
+      function showAddModal() {
+        editingAccountId = null;
+        $("#modalTitle").text("新增帳號");
+        $("#accountForm")[0].reset();
+        $("#accountId").prop("disabled", false);
+        $("#passwordRequired").text("*");
+        $("#confirmPasswordRequired").text("*");
+        $("#accountPassword").prop("required", true);
+        $("#accountConfirmPassword").prop("required", true);
+        $("#accountModal").show();
+      }
+
+      // 編輯帳號
+      function editAccount(accountId) {
+        if (!accountBridge) {
+          showAlert("橋接物件未初始化", "danger");
+          return;
+        }
+
+        showLoading(true);
+        accountBridge.get_account_by_id(accountId, function (result) {
+          try {
+            const response = JSON.parse(result);
+            if (response.success) {
+              editingAccountId = accountId;
+              $("#modalTitle").text("編輯帳號");
+              $("#accountId").val(response.data.Account).prop("disabled", true);
+              $("#accountName").val(response.data.Name);
+              $("#accountPassword").val("").prop("required", false);
+              $("#accountConfirmPassword").val("").prop("required", false);
+              $("#passwordRequired").text("(留空則不更新)");
+              $("#confirmPasswordRequired").text("(留空則不更新)");
+              $("#accountIsAdmin").val(response.data.IsAdmin);
+              $("#accountNeedPassword").val(response.data.NeedPassword);
+              $("#accountModal").show();
+            } else {
+              showAlert("載入帳號資料失敗: " + response.error, "danger");
+            }
+          } catch (parseError) {
+            showAlert("解析帳號資料失敗: " + parseError.message, "danger");
+          }
+          showLoading(false);
+        });
+      }
+
+      // 關閉模態框
+      function closeModal() {
+        $("#accountModal").hide();
+        $("#accountForm")[0].reset();
+      }
+
+      // 刪除帳號
+      function deleteAccount(accountId, accountName) {
+        deletingAccountId = accountId;
+        $("#deleteAccountName").text(accountName);
+        $("#deleteModal").show();
+      }
+
+      // 關閉刪除模態框
+      function closeDeleteModal() {
+        $("#deleteModal").hide();
+        deletingAccountId = null;
+      }
+
+      // 確認刪除
+      function confirmDelete() {
+        if (!accountBridge || !deletingAccountId) {
+          showAlert("刪除失敗", "danger");
+          return;
+        }
+
+        showLoading(true);
+        accountBridge.delete_account(deletingAccountId, function (result) {
+          try {
+            const response = JSON.parse(result);
+            if (response.success) {
+              showAlert("帳號刪除成功", "success");
+              closeDeleteModal();
+              loadAccounts();
+            } else {
+              showAlert("刪除失敗: " + response.error, "danger");
+            }
+          } catch (parseError) {
+            showAlert("解析刪除結果失敗: " + parseError.message, "danger");
+          }
+          showLoading(false);
+        });
+      }
+
+      // 表單提交
+      $("#accountForm").on("submit", function (e) {
+        e.preventDefault();
+
+        // 收集表單資料
+        const formData = {
+          Account: $("#accountId").val(),
+          Name: $("#accountName").val(),
+          IsAdmin: parseInt($("#accountIsAdmin").val()),
+          NeedPassword: parseInt($("#accountNeedPassword").val()),
+        };
+
+        if (editingAccountId) {
+          // 編輯模式：檢查密碼
+          const password = $("#accountPassword").val();
+          const confirmPassword = $("#accountConfirmPassword").val();
+
+          if (password || confirmPassword) {
+            // 如果有輸入密碼，則驗證
+            if (password !== confirmPassword) {
+              showAlert("密碼與確認密碼不符", "danger");
+              return;
+            }
+            if (password) {
+              formData.Password = password;
+            }
+          }
+          // 如果密碼欄位都為空，則不更新密碼
+        } else {
+          // 新增模式：密碼必填
+          const password = $("#accountPassword").val();
+          const confirmPassword = $("#accountConfirmPassword").val();
+
+          if (!password) {
+            showAlert("請輸入密碼", "danger");
+            return;
+          }
+
+          if (password !== confirmPassword) {
+            showAlert("密碼與確認密碼不符", "danger");
+            return;
+          }
+
+          formData.Password = password;
+        }
+
+        if (!accountBridge) {
+          showAlert("橋接物件未初始化", "danger");
+          return;
+        }
+
+        showLoading(true);
+
+        if (editingAccountId) {
+          // 更新帳號
+          formData.account_id = editingAccountId;
+          accountBridge.update_account(
+            JSON.stringify(formData),
+            function (result) {
+              try {
+                const response = JSON.parse(result);
+                if (response.success) {
+                  showAlert("帳號更新成功", "success");
+                  closeModal();
+                  loadAccounts();
+                } else {
+                  showAlert("更新失敗: " + response.error, "danger");
+                }
+              } catch (parseError) {
+                showAlert("解析更新結果失敗: " + parseError.message, "danger");
+              }
+              showLoading(false);
+            }
+          );
+        } else {
+          // 新增帳號
+          accountBridge.create_account(
+            JSON.stringify(formData),
+            function (result) {
+              try {
+                const response = JSON.parse(result);
+                if (response.success) {
+                  showAlert("帳號新增成功", "success");
+                  closeModal();
+                  loadAccounts();
+                } else {
+                  showAlert("新增失敗: " + response.error, "danger");
+                }
+              } catch (parseError) {
+                showAlert("解析新增結果失敗: " + parseError.message, "danger");
+              }
+              showLoading(false);
+            }
+          );
+        }
+      });
+
+      // 顯示載入中
+      function showLoading(show) {
+        $("#loading").toggle(show);
+      }
+
+      // 顯示提示訊息
+      function showAlert(message, type) {
+        const $alert = $("#alert");
+        $alert
+          .text(message)
+          .removeClass()
+          .addClass(`alert alert-${type}`)
+          .show();
+
+        setTimeout(function () {
+          $alert.hide();
+        }, 5000);
+      }
+
+      // 點擊模態框外部關閉
+      $(window).on("click", function (event) {
+        if (event.target === $("#accountModal")[0]) {
+          closeModal();
+        }
+        if (event.target === $("#deleteModal")[0]) {
+          closeDeleteModal();
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,938 @@
+/* 全域樣式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 設定視窗樣式 */
+.setup-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.setup-modal.show {
+    display: flex !important;
+}
+
+.setup-content {
+    background-color: white !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+    width: 90% !important;
+    max-width: 800px !important;
+    max-height: 90% !important;
+    overflow-y: auto !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.setup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+    background-color: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+}
+
+.setup-header h2 {
+    margin: 0;
+    color: #333;
+    font-size: 20px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    color: #333;
+}
+
+.setup-body {
+    padding: 20px;
+}
+
+.setup-group {
+    margin-bottom: 25px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    background-color: #fafafa;
+}
+
+.setup-group h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 16px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 8px;
+}
+
+.setup-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 10px;
+}
+
+.setup-row:last-child {
+    margin-bottom: 0;
+}
+
+.setup-row label {
+    min-width: 120px;
+    font-weight: bold;
+    color: #555;
+    font-size: 14px;
+}
+
+.setup-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.setup-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.setup-path {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+}
+
+.setup-unit {
+    color: #666;
+    font-size: 12px;
+    min-width: 30px;
+}
+
+.setup-hint {
+    color: #666;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.browse-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    min-width: 70px;
+}
+
+.browse-btn:hover {
+    background-color: #5a6268;
+}
+
+.setup-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    padding: 20px;
+    border-top: 1px solid #ddd;
+    background-color: #f8f9fa;
+    border-radius: 0 0 8px 8px;
+}
+
+.setup-btn {
+    padding: 10px 25px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    min-width: 80px;
+}
+
+.setup-save {
+    background-color: #28a745;
+    color: white;
+}
+
+.setup-save:hover {
+    background-color: #218838;
+}
+
+.setup-cancel {
+    background-color: #6c757d;
+    color: white;
+}
+
+.setup-cancel:hover {
+    background-color: #5a6268;
+}
+
+/* 操作員面板樣式 */
+.operator-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    width: 600px;
+    max-width: 90vw;
+    max-height: 80vh;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.operator-label {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.operator-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 10px 0;
+    flex-shrink: 0;
+}
+
+.operator-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    min-width: 80px;
+}
+
+.operator-btn:hover {
+    background-color: #0056b3;
+}
+
+.operator-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.operator-select {
+    flex: 1;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+/* 操作員選擇區域的捲軸樣式 */
+.operator-select::-webkit-scrollbar {
+    width: 8px;
+}
+
+.operator-select::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.operator-select::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.operator-select::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.scroll-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.scroll-table th {
+    background-color: #f8f9fa;
+    color: #333;
+    font-weight: bold;
+    padding: 10px;
+    text-align: left;
+    border-bottom: 2px solid #ddd;
+    position: sticky;
+    top: 0;
+}
+
+.scroll-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.scroll-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.scroll-table input[type="checkbox"] {
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+body {
+    font-family: "微軟正黑體", "Microsoft JhengHei", Arial, sans-serif;
+    background-color: #f0f0f0 !important;
+    background: #f0f0f0 !important;
+    overflow: hidden;
+    display: block !important;
+    align-items: unset !important;
+    justify-content: unset !important;
+    min-height: unset !important;
+    padding: 0 !important;
+    position: relative;
+    z-index: 1;
+}
+
+/* 頂部標題列 */
+.header-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    color: white;
+    padding: 10px 20px;
+    height: 58px;
+    border-bottom: 2px solid #555;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+}
+
+.button-panel {
+    display: flex;
+    gap: 10px;
+}
+
+.header-btn {
+    background-color: #000;
+    color: white;
+    border: none;
+    padding: 7px 15px;
+    font-size: 15.75px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 3px;
+    min-width: 100px;
+    height: 45px;
+}
+
+.header-btn:hover {
+    background-color: #333;
+}
+
+/* 資訊列 */
+.info-panel {
+    display: flex;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 15px 20px;
+    height: 90px;
+    align-items: center;
+    gap: 40px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.info-label {
+    font-size: 14.25px;
+    color: #333;
+}
+
+.info-value {
+    font-size: 14.25px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* 主要容器 */
+.main-container {
+    display: flex;
+    height: calc(100vh - 148px);
+}
+
+/* 左側影像面板 */
+/* 左側影像面板 */
+.image-panel {
+    flex: 1;
+    background-color: #808080;
+    position: relative;
+    overflow: hidden;
+}
+
+#imageCanvas {
+    width: 100%;
+    height: 100%;
+    background-color: #d3d3d3;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.w100 {
+    width: 100%;
+}
+.h100 {
+    height: 100%;
+}
+.image-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #0066cc;
+    font-size: 32px;
+    font-weight: bold;
+    z-index: 1;
+}
+
+/* 右側控制面板 */
+.control-panel {
+    width: 672px;
+    background-color: #f8f8f8;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 輸入區域 */
+.input-section {
+    padding: 5px;
+    background-color: white;
+    border-bottom: 1px solid #ddd;
+}
+
+.input-group {
+    margin-bottom: 10px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.input-group label {
+    display: inline-block;
+    font-size: 24px;
+    color: #333;
+    min-width: 140px;
+    text-align: right;
+    margin-right: 10px;
+}
+
+.code-input {
+    width: 100%;
+    height: 54px;
+    background-color: #00c0c0;
+    color: white;
+    border: none;
+    font-size: 30px;
+    font-family: "Arial Rounded MT Bold", Arial, sans-serif;
+    padding: 0 10px;
+    margin-bottom: 1px;
+}
+
+.code-input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.ocr-result {
+    width: 100%;
+    height: 61px;
+    background-color: #800000;
+    color: white;
+    border: none;
+    font-size: 30px;
+    font-weight: bold;
+    padding: 0 10px;
+    cursor: not-allowed;
+}
+
+.barcode-display {
+    background-color: #4682b4;
+    color: white;
+    padding: 5px 10px;
+    font-size: 21.75px;
+    font-family: "Arial Rounded MT Bold", Arial, sans-serif;
+    display: none;
+}
+
+/* 警告面板 */
+.alert-panel {
+    background-color: #ffe0c0;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.alert-icon {
+    width: 96px;
+    height: 102px;
+    background-color: #ff6b6b;
+    border-radius: 5px;
+    flex-shrink: 0;
+}
+
+.alert-message {
+    font-size: 40px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* 正確結果面板 */
+.ok-panel {
+    background-color: #c0ffc0;
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
+    position: relative;
+}
+
+.result-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.result-label {
+    background-color: #404040;
+    color: white;
+    font-size: 30px;
+    font-weight: bold;
+    padding: 5px 15px;
+    display: inline-block;
+}
+
+.ok-result {
+    font-size: 70px;
+    font-weight: bold;
+    color: #228b22;
+}
+
+.halcon-label {
+    background-color: #8080ff;
+    color: white;
+    font-size: 30px;
+    font-weight: bold;
+    padding: 5px 15px;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+/* 錯誤面板 */
+.error-panel {
+    background-color: #c0c0c0;
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
+}
+
+.error-result {
+    font-size: 50px;
+    font-weight: bold;
+    color: #ff0000;
+}
+
+.manual-judgment {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.judgment-label {
+    background-color: #e0e0e0;
+    color: black;
+    font-size: 30px;
+    font-weight: bold;
+    padding: 5px 15px;
+    white-space: nowrap;
+}
+
+.judgment-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.judgment-btn {
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    border: none;
+    padding: 5px 20px;
+    cursor: pointer;
+    border-radius: 3px;
+    margin-left: 20px;
+}
+
+.allow-btn {
+    background-color: #1e90ff;
+}
+
+.back-btn {
+    background-color: #c00000;
+}
+
+.judgment-text {
+    background-color: #1e90ff;
+    color: white;
+    font-size: 30px;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 3px;
+}
+
+/* 錯誤選擇面板 */
+.error-select-panel {
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.select-label {
+    font-size: 30px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.select-buttons {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 5px;
+}
+
+.select-btn {
+    background-color: #404040;
+    color: white;
+    font-size: 20.25px;
+    font-weight: bold;
+    border: none;
+    padding: 5px 20px;
+    cursor: pointer;
+    border-radius: 3px;
+    min-width: 150px;
+    height: 70px;
+}
+
+.select-text {
+    background-color: #000080;
+    color: white;
+    font-size: 30px;
+    font-weight: bold;
+    text-align: center;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+/* 外觀判定面板 */
+.appearance-panel {
+    background-color: #e0e0e0;
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.appearance-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.class-row {
+    display: flex;
+    align-items: center;
+}
+
+.appearance-label {
+    background-color: #404040;
+    color: #c0c0c0;
+    font-size: 30px;
+    font-weight: bold;
+    padding: 5px 15px;
+    display: inline-block;
+    margin-right: 20px;
+}
+
+.appearance-buttons {
+    display: flex;
+    gap: 20px;
+}
+
+.appearance-btn {
+    font-size: 20.25px;
+    font-weight: bold;
+    color: white;
+    border: none;
+    padding: 5px 20px;
+    cursor: pointer;
+    border-radius: 3px;
+    width: 159px;
+    height: 70px;
+}
+
+.ok-btn {
+    background-color: #404040;
+}
+
+.ng-btn {
+    background-color: #404040;
+}
+
+.ok-btn.active {
+    background-color: #006400;
+}
+
+.ng-btn.active {
+    background-color: #8b0000;
+}
+
+.class-label {
+    font-size: 30px;
+    font-weight: bold;
+    color: #333;
+    margin-right: 20px;
+}
+
+.class-buttons {
+    display: flex;
+    gap: 20px;
+}
+
+.class-btn {
+    background-color: #808080;
+    color: white;
+    font-size: 20.25px;
+    font-weight: bold;
+    border: none;
+    padding: 15px 20px;
+    cursor: pointer;
+    border-radius: 3px;
+    width: 159px;
+    height: 70px;
+}
+
+.class-btn.active {
+    background-color: #000080;
+}
+
+/* 原因面板 */
+.reason-panel {
+    background-color: #e0e0e0;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.reason-row {
+    display: flex;
+    align-items: center;
+}
+
+.reason-label {
+    font-size: 30px;
+    font-weight: bold;
+    color: #333;
+    margin-right: 20px;
+}
+
+.reason-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+.reason-btn {
+    background-color: #808080;
+    color: white;
+    font-size: 20.25px;
+    font-weight: bold;
+    border: none;
+    padding: 15px 20px;
+    cursor: pointer;
+    border-radius: 3px;
+    width: 133px;
+    height: 70px;
+}
+
+.reason-btn.active {
+    background-color: #ff4500;
+}
+
+/* 操作按鈕面板 */
+.action-panel {
+    padding: 20px;
+    background-color: white;
+    margin-top: auto;
+}
+
+.action-btn {
+    width: 100%;
+    height: 75px;
+    font-size: 30px;
+    font-weight: bold;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.start-btn {
+    background-color: #000;
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: 20px center;
+    background-size: 24px;
+    padding-left: 60px;
+}
+.start-btn:disabled {
+    background-color: #808080;
+    cursor:not-allowed;
+}
+.save-btn {
+    background-color: #000;
+}
+
+/* 響應式設計 */
+@media (max-width: 1200px) {
+    .control-panel {
+        width: 500px;
+    }
+    
+    .header-btn {
+        font-size: 14px;
+        min-width: 80px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-container {
+        flex-direction: column;
+    }
+    
+    .control-panel {
+        width: 100%;
+        height: 50%;
+    }
+    
+    .image-panel {
+        height: 50%;
+    }
+    
+    .info-panel {
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+}
+
+/* 動畫效果 */
+.panel-enter {
+    animation: slideIn 0.3s ease-out;
+}
+
+.panel-exit {
+    animation: slideOut 0.3s ease-in;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
+/* 按鈕懸停效果 */
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* 輸入框焦點效果 */
+input:focus {
+    outline: 2px solid #0066cc;
+    outline-offset: 2px;
+}
+
+/* 滾動條樣式 */
+.control-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.control-panel::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.control-panel::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.control-panel::-webkit-scrollbar-thumb:hover {
+    background: #555;
+} 

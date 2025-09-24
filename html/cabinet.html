@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>管理後台</title>
+  <link rel="stylesheet" href="./css/all.css" />
+  <link rel="stylesheet" href="./css/show-msg.css" />
+</head>
+
+<body class="container p-24 d-flex gap-54">
+  <!-- 導覽列 -->
+  <nav class="d-flex flex-column shadow-block radius-36 position-relative"
+    style="flex-shrink: 0;padding:54px 16px;">
+    <h2 class="fz-72 fw-bold text-center color-text-dark d-none" style="margin-bottom:54px;">管理後台</h2>
+    <button type="button" class="btn btn-admin" data-target="keyHistory" id="btnKeyHistory">
+      <div class="icon-bg">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" height="54px" viewBox="0 -960 960 960" width="54px">
+          <path
+            d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520h200L520-800v200Z" />
+        </svg>
+      </div>
+      <span>歷史紀錄</span>
+    </button>
+    <button type="button" class="btn btn-admin" data-target="parameter" id="btnParameter">
+      <div class="icon-bg">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" height="54px" viewBox="0 -960 960 960" width="54px">
+          <path
+            d="M686-132 444-376q-20 8-40.5 12t-43.5 4q-100 0-170-70t-70-170q0-36 10-68.5t28-61.5l146 146 72-72-146-146q29-18 61.5-28t68.5-10q100 0 170 70t70 170q0 23-4 43.5T584-516l244 242q12 12 12 29t-12 29l-84 84q-12 12-29 12t-29-12Z" />
+        </svg>
+      </div>
+      <span>參數設定</span>
+    </button>
+    <button type="button" class="btn btn-admin" data-target="" id="btnWifi">
+      <div class="icon-bg">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" height="54px" viewBox="0 -960 960 960" width="54px">
+          <path
+            d="M480-120q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29ZM254-346l-84-86q59-59 138.5-93.5T480-560q92 0 171.5 35T790-430l-84 84q-44-44-102-69t-124-25q-66 0-124 25t-102 69ZM84-516 0-600q92-94 215-147t265-53q142 0 265 53t215 147l-84 84q-77-77-178.5-120.5T480-680q-116 0-217.5 43.5T84-516Z" />
+        </svg>
+      </div>
+      <span>Wi-Fi</span>
+    </button>
+    <button type="button" class="btn btn-admin active d-special" data-target="cabinet" id="btnCabinet">
+      <div class="icon-bg">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" height="54px" viewBox="0 -960 960 960" width="54px">
+          <path d="M120-120v-720h720v720H120Zm80-160h240v-80H200v80Zm0-240h240v-80H200v80Zm360 240h240v-80H560v80Zm0-240h240v-80H560v80Z"/>
+        </svg>
+      </div>
+      <span>櫃子管理</span>
+    </button>
+    <button type="button" class="btn btn-admin" data-target="member" id="btnMember">
+      <div class="icon-bg">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" height="54px" viewBox="0 -960 960 960" width="54px">
+          <path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Z"/>
+        </svg>
+      </div>
+      <span>會員管理</span>
+    </button>
+    <button type="button" class="btn btn-admin d-special" data-target="group" id="btnGroup">
+      <div class="icon-bg">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" height="54px" viewBox="0 -960 960 960" width="54px">
+          <path d="M40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm720 0v-120q0-44-24.5-84.5T666-434q51 6 96 20.5t84 35.5q36 20 55 44.5t19 53.5v120H760ZM360-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm400-160q0 66-47 113t-113 47q-11 0-28-2.5t-28-5.5q27-32 41.5-71t14.5-81q0-42-14.5-81T544-792q14-5 28-6.5t28-1.5q66 0 113 47t47 113Z"/>
+        </svg>
+      </div>
+      <span>群組管理</span>
+    </button>
+    <div style="flex-grow:1;"></div>
+    <button type="button" class="btn btn-admin btnToFront position-absolute"
+      style="bottom:8px;width:calc(100% - 16px);" id="btnToFront">
+      <div class="icon-bg">
+        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" height="54px" viewBox="0 -960 960 960" width="54px">
+          <path d="M160-120v-480l320-240 320 240v480H560v-280H400v280H160Z" />
+        </svg>
+      </div>
+      <span>返回前台</span>
+    </button>
+  </nav>
+
+  <div class="w-100 p-24">
+    <!-- 櫃子資訊-->
+    <div class="p-20 adminPage cabinet-manage" id="cabinet-info">
+      <div class="cabinet-card" data-cabinet-id="1">
+        <div class="cabinet-info">
+          <h2 class="cabinet-name">櫃子名稱：A區櫃子</h2>
+          <p class="cabinet-keys">鑰匙數量：10</p>
+        </div>
+        <div class="cabinet-actions">
+          <button class="btn-cabinet btn-edit">編輯</button>
+          <button class="btn-cabinet">鑰匙管理</button>
+        </div>
+      </div>
+    </div>
+
+ 
+  </div>
+
+  <!-- 編輯櫃子彈出視窗 -->
+  <div id="editPopup" class="popup-overlay">
+    <div class="popup-content">
+      <div class="popup-title">編輯櫃子名稱</div>
+      <input type="text" id="cabinetName" class="popup-input" placeholder="請輸入櫃子名稱">
+      <div class="popup-buttons">
+        <button class="popup-button popup-button-cancel" id="cancelEdit">取消</button>
+        <button class="popup-button popup-button-confirm" id="confirmEdit">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script/jquery-3.7.1.slim.min.js"></script>
+
+  <script src="script/qwebchannel.js"></script>
+  <script src="script/html-msgbox.js"></script>
+  <script>
+    let api = null;
+    let currentCabinetId = null;
+
+    // 初始化 QWebChannel
+    new QWebChannel(qt.webChannelTransport, function(channel) {
+      api = channel.objects.api;
+    });
+    function loadCabinet(data) {
+      // 清空現有內容
+      $('#cabinet-info').empty();
+      
+      // 遍歷所有櫃子資料並生成 HTML
+      data.forEach(cabinet => {
+        const cabinetHtml = `
+          <div class="cabinet-card" data-cabinet-id="${cabinet.cabinetID}">
+            <div class="cabinet-info">
+              <h2 class="cabinet-name">櫃子名稱：${cabinet.name}</h2>
+              <p class="cabinet-keys">鑰匙數量：${cabinet.deviceCount}</p>
+              <p class="cabinet-status">狀態：${cabinet.enable ? '啟用' : '停用'}</p>
+            </div>
+            <div class="cabinet-actions">
+              <button class="btn-cabinet btn-edit">編輯</button>
+              <button class="btn-cabinet btn-key-manage" data-cabinet-id="${cabinet.cabinetID}">鑰匙管理</button>
+              
+            </div>
+          </div>
+        `;
+        
+        // 將生成的 HTML 添加到容器中
+        $('#cabinet-info').append(cabinetHtml);
+      });
+      reset_event();
+    }
+
+    function reset_event(){
+        // 編輯按鈕點擊事件
+        $('.btn-edit').click(function() {
+            const cabinetCard = $(this).closest('.cabinet-card');
+            currentCabinetId = cabinetCard.data('cabinet-id');
+            const currentName = cabinetCard.find('.cabinet-name').text().replace('櫃子名稱：', '');
+            
+            // 發送編輯請求到 Python
+            api.edit_cabinet(JSON.stringify({
+            cabinet_id: currentCabinetId,
+            action: 'edit'
+            }));
+        });
+
+        // 重設鑰匙管理按鈕事件 
+        $('.btn-key-manage').click(function() {
+        const cabinetId = $(this).data('cabinet-id');
+        api.do_action(JSON.stringify({
+            action_id: 7,
+            action_data: {
+            cabinet_id: cabinetId
+            }
+        }));
+        });
+    }
+    $(document).ready(function () {
+      $(document).on("keydown", function(e) {
+        if(e.key === "F11") {
+          api.toggle_full_screen("");
+        }
+      });
+      $('#btnKeyHistory').click(function () {
+        //alert('btnKeyHistory');
+        api.do_action(JSON.stringify({
+          action_id: 8,
+          action_data: {}
+        }));
+      });
+
+      $('#btnParameter').click(function () {
+        api.do_action(JSON.stringify({
+          action_id: 9,
+          action_data: {}
+        }));
+      });
+
+      $('#btnWifi').click(function () {
+        api.do_action(JSON.stringify({
+          action_id: 17,
+          action_data: {}
+        }));
+      });
+
+      $('#btnCabinet').click(function () {
+        api.do_action(JSON.stringify({
+          action_id: 6,
+          action_data: {}
+        }));
+      });
+
+      $('#btnMember').click(function () {
+        api.do_action(JSON.stringify({
+          action_id: 10,
+          action_data: {}
+        }));
+      });
+
+      $('#btnGroup').click(function () {
+        api.do_action(JSON.stringify({
+          action_id: 11,
+          action_data: {}
+        }));
+      });
+
+      $('#btnToFront').click(function () {
+        api.do_action(JSON.stringify({
+          action_id: 1,
+          action_data: {}
+        }));
+      });
+
+      
+
+      // 取消編輯
+      $('#cancelEdit').click(function() {
+        $('#editPopup').hide();
+      });
+
+      // 確認編輯
+      $('#confirmEdit').click(function() {
+        const newName = $('#cabinetName').val().trim();
+        if (newName) {
+          api.update_cabinet(JSON.stringify({
+            cabinet_id: currentCabinetId,
+            name: newName
+          }));
+        }
+      });
+
+      // 添加更新櫃子名稱的函數
+      window.updateCabinetName = function(cabinetId, newName) {
+        $(`.cabinet-card[data-cabinet-id="${cabinetId}"]`).find('.cabinet-name').text(`櫃子名稱：${newName}`);
+        $('#editPopup').hide();
+      };
+
+      // 添加顯示編輯視窗的函數
+      window.showEditPopup = function(cabinetId, currentName) {
+        $('#cabinetName').val(currentName);
+        $('#editPopup').show();
+      };
+    });
+  </script>
+</body>
+
+</html>

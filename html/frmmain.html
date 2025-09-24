@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>靶材印字檢測OCR3.0</title>
+    <link rel="stylesheet" href="login.css" />
+    <link rel="stylesheet" href="frmmain.css" />
+  </head>
+
+  <body>
+    <div class="login-container">
+      <div class="login-box">
+        <div class="login-header">
+          <h1>登入系統</h1>
+          <p>請輸入您的帳號和密碼</p>
+        </div>
+
+        <div class="login-form">
+          <div class="form-group">
+            <label for="username">帳號</label>
+            <input type="text" id="username" name="username" placeholder="請輸入帳號" autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <label for="password">密碼</label>
+            <input type="password" id="password" name="password" placeholder="請輸入密碼" autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <button type="button" id="loginBtn" class="login-btn">登入</button>
+          </div>
+
+          <div class="form-group">
+            <button type="button" id="clearBtn" class="clear-btn">清除</button>
+          </div>
+        </div>
+
+        <div class="login-footer">
+          <div id="message" class="message"></div>
+        </div>
+      </div>
+    </div>
+    <div class="main-window w100 h100" style="display: none">
+      <!-- 頂部標題列 -->
+      <div class="header-panel">
+        <div class="title">靶材印字檢測OCR3.0</div>
+        <div class="button-panel">
+          <button class="header-btn" id="btnStandardImage" style="display: none">
+            基準圖像登錄
+          </button>
+          <button class="header-btn" id="btnParameter">設定</button>
+          <button class="header-btn" id="btnExport">匯出</button>
+          <button class="header-btn" id="btnOperator">操作員</button>
+          <button class="header-btn" id="btnAccount">帳號</button>
+        </div>
+      </div>
+
+      <!-- 資訊列 -->
+      <div class="info-panel">
+        <div class="info-item">
+          <span class="info-label">日期:</span>
+          <span class="info-value" id="currentDate">2024/01/15</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">時間:</span>
+          <span class="info-value" id="currentTime">14:30:25</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">今日檢測次數:</span>
+          <span class="info-value" id="totalCount">50</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">NG次數:</span>
+          <span class="info-value" id="ngCount">5</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">操作員:</span>
+          <span class="info-value" id="userName">007</span>
+        </div>
+      </div>
+
+      <!-- 主要內容區域 -->
+      <div class="main-container">
+        <!-- 左側影像顯示區域 -->
+        <!-- 左側影像顯示區域 -->
+        <div class="image-panel" id="imagePanel">
+          <canvas id="imageCanvas" width="800" height="600"></canvas>
+          <div class="image-placeholder" id="imagePlaceholder">
+            <span>目前沒有影像</span>
+          </div>
+        </div>
+
+        <!-- 右側控制面板 -->
+        <div class="control-panel">
+          <!-- 條碼輸入區域 -->
+          <div class="input-section">
+            <div class="input-group">
+              <label>靶材標籤:</label>
+              <input type="text" id="txtCode1" class="code-input" placeholder="請輸入靶材標籤" />
+              <div class="barcode-display" id="lblBarCode1">等待輸入</div>
+            </div>
+            <div class="input-group">
+              <label>外箱標籤:</label>
+              <input type="text" id="txtCode2" class="code-input" placeholder="請輸入外箱標籤" />
+              <div class="barcode-display" id="lblBarCode2">等待輸入</div>
+            </div>
+            <div class="input-group">
+              <label>視覺字串:</label>
+              <input type="text" id="txtOCRResult" class="ocr-result" readonly />
+            </div>
+          </div>
+
+          <!-- 警告訊息區域 -->
+          <div class="alert-panel" id="alertPanel" style="display: none">
+            <div class="alert-icon"></div>
+            <div class="alert-message" id="alertMessage">標籤條碼不一致</div>
+          </div>
+
+          <!-- 正確結果區域 -->
+          <div class="ok-panel" id="okPanel" style="display: none">
+            <div class="result-row">
+              <div class="result-label">照合結果</div>
+              <div class="ok-result">正確</div>
+            </div>
+            <div class="halcon-label" id="halconLabel" style="display: none">
+              Halcon
+            </div>
+          </div>
+
+          <!-- 錯誤處理區域 -->
+          <div class="error-panel" id="errorPanel" style="display: none">
+            <div class="result-row">
+              <div class="result-label">照合結果</div>
+              <div class="error-result">錯誤</div>
+            </div>
+            <div class="manual-judgment">
+              <div class="judgment-label">目視判定</div>
+              <div class="judgment-buttons">
+                <button class="judgment-btn allow-btn" id="btnAllow">
+                  允收
+                </button>
+                <button class="judgment-btn back-btn" id="btnBack">退回</button>
+              </div>
+              <div class="judgment-text" id="judgmentText" style="display: none">
+                判定為允收
+              </div>
+            </div>
+          </div>
+
+          <!-- 錯誤選擇區域 -->
+          <div class="error-select-panel" id="errorSelectPanel" style="display: none">
+            <div class="select-label">待擴充基準圖像</div>
+            <div class="select-buttons">
+              <button class="select-btn" id="btnMark">摺痕</button>
+              <button class="select-btn" id="btnCheckError">辨識錯誤</button>
+              <button class="select-btn" id="btnCantOCR">無法辨識</button>
+            </div>
+            <div class="select-text" id="selectText" style="display: none"></div>
+          </div>
+
+          <!-- 外觀判定區域 -->
+          <div class="appearance-panel" id="appearancePanel" style="display: none">
+            <div class="appearance-row">
+              <div class="appearance-label">外觀判定</div>
+              <div class="appearance-buttons">
+                <button class="appearance-btn ok-btn" id="btnOK">ＯＫ</button>
+                <button class="appearance-btn ng-btn" id="btnNG">ＮＧ</button>
+              </div>
+            </div>
+            <div class="class-row">
+              <div class="class-label">類別</div>
+              <div class="class-buttons">
+                <button class="class-btn" id="btnClass1">磯原品</button>
+                <button class="class-btn" id="btnClass2">重工件</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 原因選擇區域 -->
+          <div class="reason-panel" id="reasonPanel" style="display: none">
+            <div class="reason-row">
+              <div class="reason-label">原因</div>
+              <div class="reason-buttons">
+                <button class="reason-btn" id="btnReason1">氧化</button>
+                <button class="reason-btn" id="btnReason2">漏氣</button>
+                <button class="reason-btn" id="btnReason3">異物</button>
+                <button class="reason-btn" id="btnReason4">孔洞異常</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 操作按鈕區域 -->
+          <div class="action-panel">
+            <button class="action-btn start-btn" id="btnStart" style="display: none">
+              執行檢測
+            </button>
+            <button class="action-btn save-btn" id="btnSave" style="display: none">
+              確認
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="operator-panel" id="operatorPanel" style="display: none">
+      <div class="operator-label">操作員</div>
+      <div class="operator-buttons">
+        <button class="operator-btn" id="btnOperator_OK">確定</button>
+        <button class="operator-btn" id="btnOperator_Cancel">取消</button>
+      </div>
+      <div class="operator-select">
+        <table class="scroll-table">
+          <thead>
+            <tr>
+              <th>選擇</th>
+              <th>操作員</th>
+            </tr>
+          </thead>
+          <tbody id="operator-list">
+            <tr>
+              <td><input type="checkbox" data-value="操作員1"></td>
+              <td>操作員1</td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" data-value="操作員2"></td>
+              <td>操作員2</td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" data-value="操作員3"></td>
+              <td>操作員3</td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" data-value="操作員4"></td>
+              <td>操作員4</td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+
+    </div>
+    
+    <div class="setup-modal" id="setupModal" style="display: none">
+      <div class="setup-content">
+        <div class="setup-header">
+          <h2>系統設定</h2>
+          <button class="close-btn" id="setupCloseBtn">&times;</button>
+        </div>
+
+        <div class="setup-body">
+          <!-- Cognex 設定 -->
+          <div class="setup-group">
+            <h3>Cognex</h3>
+            <div class="setup-row">
+              <label>IP:</label>
+              <input type="text" id="setupCognexIP" class="setup-input" placeholder="192.168.1.5">
+            </div>
+            <div class="setup-row">
+              <label>讀取PORT:</label>
+              <input type="number" id="setupCognexPort" class="setup-input" placeholder="8601">
+            </div>
+            <div class="setup-row">
+              <label>圖片等待時間:</label>
+              <input type="number" id="setupPicWaitTime" class="setup-input" placeholder="5000">
+              <span class="setup-unit">ms</span>
+            </div>
+            <div class="setup-row">
+              <label>檢測重試:</label>
+              <input type="number" id="setupRetryTime" class="setup-input" placeholder="1">
+              <span class="setup-unit">次</span>
+            </div>
+          </div>
+
+          <!-- 路徑設定 -->
+          <div class="setup-group">
+            <h3>其他</h3>
+            <div class="setup-row">
+              <label>OCR圖檔路徑:</label>
+              <input type="text" id="setupOcrImagePath" class="setup-input setup-path" readonly>
+              <button class="browse-btn" id="browseOcrImage">瀏覽..</button>
+            </div>
+            <div class="setup-row">
+              <label>資料儲存路徑:</label>
+              <input type="text" id="setupDbImagePath" class="setup-input setup-path" readonly>
+              <button class="browse-btn" id="browseDbImage">瀏覽..</button>
+            </div>
+            <div class="setup-row">
+              <label>資料同步路徑:</label>
+              <input type="text" id="setupBackupPath" class="setup-input setup-path" readonly>
+              <button class="browse-btn" id="browseBackup">瀏覽..</button>
+            </div>
+            <div class="setup-row">
+              <label>匯出預設路徑:</label>
+              <input type="text" id="setupExportPath" class="setup-input setup-path" readonly>
+              <button class="browse-btn" id="browseExport">瀏覽..</button>
+            </div>
+          </div>
+
+          <!-- 圖片設定 -->
+          <div class="setup-group">
+            <h3>圖片</h3>
+            <div class="setup-row">
+              <label>偏移量(左上角) X:</label>
+              <input type="number" id="setupOffsetX" class="setup-input" placeholder="0">
+            </div>
+            <div class="setup-row">
+              <label>Y:</label>
+              <input type="number" id="setupOffsetY" class="setup-input" placeholder="0">
+            </div>
+            <div class="setup-row">
+              <label>放大比例:</label>
+              <input type="number" id="setupScale" class="setup-input" placeholder="1.0" step="0.1" min="0.1" max="3.0">
+              <span class="setup-hint">(若為原圖，設為1.0)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="setup-footer">
+          <button class="setup-btn setup-save" id="setupSaveBtn">儲存</button>
+          <button class="setup-btn setup-cancel" id="setupCancelBtn">取消</button>
+        </div>
+      </div>
+      <script src="script/jquery-3.7.1.slim.min.js"></script>
+      <script src="script/qwebchannel.js"></script>
+      <script src="script/canvas-image.js"></script>
+      <script>
+        // 全域變數
+        let api = null;
+        let isLoggedIn = false;
+        let currentTestData = {
+          code1: "",
+          code2: "",
+          ocrResult: "",
+        };
+        // 圖片操作相關變數（已移至 canvas-image.js）
+        // 初始化 QWebChannel
+        new QWebChannel(qt.webChannelTransport, function(channel) {
+          console.log("QWebChannel 初始化開始");
+          api = channel.objects.api;
+          window.api = api; // 同時設置全域變數
+          console.log("WebChannel 初始化成功，api:", api);
+          // 檢查 api 物件是否正確載入
+          if (!api) {
+            console.error("API 物件未正確載入");
+            return;
+          }
+          // 載入當前資訊
+          loadCurrentInfo();
+          // 設定定時更新資訊（每5秒更新一次）
+          setInterval(function() {
+            if (api) {
+              loadCurrentInfo();
+            }
+          }, 5000);
+          // 初始化按鈕事件
+          console.log("開始初始化按鈕事件");
+          initButtonEvents();
+          console.log("按鈕事件初始化完成");
+          // 自動登入管理員帳號（測試用）
+          autoLogin();
+          // 檢查設定按鈕狀態
+          setTimeout(function() {
+            const btnExists = $("#btnParameter").length > 0;
+            const btnVisible = $("#btnParameter").is(":visible");
+            const btnDisplay = $("#btnParameter").css("display");
+            if (api) api.show_alert_msg("設定按鈕存在: " + btnExists);
+            if (api) api.show_alert_msg("設定按鈕可見: " + btnVisible);
+            if (api) api.show_alert_msg("設定按鈕 display 樣式: " + btnDisplay);
+          }, 2000);
+        });
+        // 自動登入
+        function autoLogin() {
+          if (!api) {
+            console.error("api 未初始化");
+            return;
+          }
+          const loginData = {
+            account: "Admin",
+            password: "admin",
+          };
+          api.login(JSON.stringify(loginData), function(result) {
+            try {
+              const response = JSON.parse(result);
+              if (response.success) {
+                isLoggedIn = true;
+                const user_data = response.data;
+                const isAdmin = user_data.is_admin;
+                // 設定按鈕權限
+                if (isAdmin) {
+                  $("#btnParameter").show();
+                  $("#btnExport").show();
+                  $("#btnAccount").show();
+                  console.log("管理員權限，顯示所有按鈕");
+                } else {
+                  $("#btnParameter").hide();
+                  $("#btnExport").hide();
+                  $("#btnAccount").hide();
+                  console.log("一般用戶權限，隱藏管理員按鈕");
+                }
+                updateUserInfo(user_data);
+                console.log("自動登入成功");
+                // 切換到主視窗
+                $(".login-container").hide();
+                $(".main-window").show();
+              } else {
+                console.error("自動登入失敗:", response.error);
+              }
+            } catch (error) {
+              console.error("解析登入回應失敗:", error);
+            }
+          });
+        }
+        // 更新使用者資訊
+        function updateUserInfo(userData) {
+          $("#userName").text(userData.user_name);
+        }
+        // 載入當前資訊
+        function loadCurrentInfo() {
+          if (!api) return;
+          api.get_current_info(function(result) {
+            try {
+              const response = JSON.parse(result);
+              if (response.success) {
+                updateInfoDisplay(response.data);
+              }
+            } catch (error) {
+              console.error("載入資訊失敗:", error);
+            }
+          });
+        }
+        // 更新資訊顯示
+        function updateInfoDisplay(data) {
+          if (data.date) $("#currentDate").text(data.date);
+          if (data.time) $("#currentTime").text(data.time);
+          if (data.total_count !== undefined)
+            $("#totalCount").text(data.total_count);
+          if (data.ng_count !== undefined) $("#ngCount").text(data.ng_count);
+        }
+        // 條碼輸入事件
+        $("#txtCode1").on("input", function() {
+          const value = $(this).val();
+          if (value.endsWith("/r")) {
+            // 移除 /r 並更新值
+            const newValue = value.slice(0, -2);
+            $(this).val(newValue);
+            currentTestData.code1 = newValue;
+            $("#lblBarCode1").text(newValue || "等待輸入");
+            // 跳到 Code2
+            $("#txtCode2").focus();
+          } else {
+            currentTestData.code1 = value;
+            $("#lblBarCode1").text(value || "等待輸入");
+            checkCodeConsistency();
+          }
+        });
+        $("#txtCode2").on("input", function() {
+          const value = $(this).val();
+          if (value.endsWith("/r")) {
+            // 移除 /r 並更新值
+            const newValue = value.slice(0, -2);
+            $(this).val(newValue);
+            currentTestData.code2 = newValue;
+            $("#lblBarCode2").text(newValue || "等待輸入");
+            // 開始檢測
+            $("#btnStart").trigger("click");
+          } else {
+            currentTestData.code2 = value;
+            $("#lblBarCode2").text(value || "等待輸入");
+            checkCodeConsistency();
+          }
+        });
+        // 檢查條碼一致性
+        function checkCodeConsistency() {
+          const code1 = currentTestData.code1;
+          const code2 = currentTestData.code2;
+          if (code1 && code2) {
+            if (code1 === code2) {
+              $("#btnStart").show();
+              hideAlert();
+            } else {
+              $("#btnStart").hide();
+              showAlert("條碼不一致");
+            }
+          } else {
+            $("#btnStart").hide();
+          }
+        }
+        // 開始檢測
+        $("#btnStart").on("click", function() {
+          if (!api) {
+            showAlert("系統未初始化");
+            return;
+          }
+          if (!currentTestData.code1) {
+            showAlert("請輸入靶材標籤");
+            return;
+          }
+          if (currentTestData.code1 !== currentTestData.code2) {
+            showAlert("條碼不一致");
+            return;
+          }
+          startOCRTest();
+        });
+
+        function setOCRResult(result) {
+          $("#txtOCRResult").val(result);
+        }
+        // 開始 OCR 測試
+        function startOCRTest() {
+          const testData = {
+            code1: currentTestData.code1,
+            code2: currentTestData.code2,
+          };
+          // 更新 UI 狀態
+          $("#btnStart").hide();
+          $("#txtCode1").prop("readonly", true);
+          $("#txtCode2").prop("readonly", true);
+          $("#txtOCRResult").val("開始檢測");
+          api.start_ocr_test(JSON.stringify(testData)); // 開始 OCR 測試
+        }
+        // 處理 OCR 結果
+        function handleOCRResult(result) {
+          switch (result) {
+            case "success":
+              showSuccessResult();
+              break;
+            case "error":
+              showErrorResult();
+              break;
+            case "connect_error":
+              showAlert("連線或登入失敗");
+              resetUI();
+              break;
+            case "wait_pic_timeout":
+              showAlert("等待圖檔超時");
+              resetUI();
+              break;
+            case "ocr_error":
+              showAlert("取得OCR字串失敗");
+              resetUI();
+              break;
+            default:
+              showAlert("未知錯誤");
+              resetUI();
+          }
+        }
+        // 顯示成功結果
+        function showSuccessResult() {
+          hideAllPanels();
+          $("#okPanel").show();
+          $("#appearancePanel").show();
+          $("#btnSave").show();
+        }
+        // 顯示錯誤結果
+        function showErrorResult() {
+          hideAllPanels();
+          $("#errorPanel").show();
+          //$('#errorSelectPanel').show();
+          //$('#btnSave').show();
+        }
+        // 隱藏所有面板
+        function hideAllPanels() {
+          $("#alertPanel").hide();
+          $("#okPanel").hide();
+          $("#errorPanel").hide();
+          $("#errorSelectPanel").hide();
+          $("#appearancePanel").hide();
+          $("#reasonPanel").hide();
+          $("#operatorPanel").hide();
+        }
+        // 顯示警告
+        function showAlert(message) {
+          $("#alertMessage").text(message);
+          $("#alertPanel").show();
+          $("#btnStart").show();
+          $("#txtCode1").prop("readonly", false);
+          $("#txtCode2").prop("readonly", false);
+        }
+        // 隱藏警告
+        function hideAlert() {
+          $("#alertPanel").hide();
+        }
+        // 重置 UI
+        function resetUI() {
+          $("#txtCode1").prop("readonly", false);
+          $("#txtCode2").prop("readonly", false);
+          $("#txtOCRResult").val("");
+          $("#txtCode1").val("");
+          $("#txtCode2").val("");
+          $(".appearance-btn").removeClass("active");
+          $(".class-btn").removeClass("active");
+          $("#btnSave").hide();
+          $("#btnStart").hide();
+          $(".reason-btn").removeClass("active");
+          $("#judgmentText").hide();
+         
+          $(".judgment-btn").show();
+          hideAllPanels();
+        }
+        // 判定按鈕事件
+        $("#btnAllow").on("click", function() {
+          setJudgment("allow");
+          hideAllPanels();
+          $("#errorSelectPanel").show();
+          $("#judgmentText").text("判定為允收");
+          $("#judgmentText").show();
+          $("#errorPanel").show();
+          $(".judgment-btn").hide();
+        });
+        $("#btnBack").on("click", function() {
+          setJudgment("back");
+          hideAllPanels();
+          //$("#errorSelectPanel").show();
+          $("#judgmentText").text("判定為退回");
+          $("#judgmentText").show();
+          $("#errorPanel").show();
+          $(".judgment-btn").hide();
+          $("#btnSave").show();
+        });
+        $("#btnMark").on("click", function() {
+          setJudgment("fold");
+          $(".select-btn").hide();
+          $("#selectText").text("判定為摺痕");
+          $("#selectText").show();
+          $("#appearancePanel").show();
+        });
+        $("#btnCheckError").on("click", function() {
+          setJudgment("ocr_error");
+          $(".select-btn").hide();
+          $("#selectText").text("判定為辨識錯誤");
+          $("#selectText").show();
+          $("#appearancePanel").show();
+        });
+        $("#btnCantOCR").on("click", function() {
+          setJudgment("cannot_ocr");
+          $(".select-btn").hide();
+          $("#selectText").text("判定為無法辯識");
+          $("#selectText").show();
+          $("#appearancePanel").show();
+        });
+        // 外觀判定按鈕
+        $("#btnOK").on("click", function() {
+          $("#btnOK").addClass("active");
+          $("#btnNG").removeClass("active");
+          setJudgment("exterior_ok");
+          $("#btnSave").show();
+          $("#btnStart").hide();
+          $("#reasonPanel").hide();
+        });
+        $("#btnNG").on("click", function() {
+          setJudgment("exterior_ng");
+          $("#btnNG").addClass("active");
+          $("#btnOK").removeClass("active");
+          $("#reasonPanel").show();
+        });
+        $("#btnClass1").on("click", function() {
+          $("#btnClass1").toggleClass("active");
+          setJudgment("class1");
+        });
+        $("#btnClass2").on("click", function() {
+          $("#btnClass2").toggleClass("active");
+          setJudgment("class2");
+        });
+        // 原因按鈕
+        $("#btnReason1").on("click", function() {
+          $(".reason-btn").removeClass("active");
+          $("#btnReason1").addClass("active");
+          setJudgment("reason_oxidation");
+          $("#btnSave").show();
+          $("#btnStart").hide();
+        });
+        $("#btnReason2").on("click", function() {
+          $(".reason-btn").removeClass("active");
+          $("#btnReason2").addClass("active");
+          setJudgment("reason_leak");
+          $("#btnSave").show();
+          $("#btnStart").hide();
+        });
+        $("#btnReason3").on("click", function() {
+          $(".reason-btn").removeClass("active");
+          $("#btnReason3").addClass("active");
+          setJudgment("reason_foreign_matter");
+          $("#btnSave").show();
+          $("#btnStart").hide();
+        });
+        $("#btnReason4").on("click", function() {
+          $(".reason-btn").removeClass("active");
+          $("#btnReason4").addClass("active");
+          setJudgment("reason_hole_abnormal");
+          $("#btnSave").show();
+          $("#btnStart").hide();
+        });
+        // 設定判定
+        function setJudgment(type) {
+          if (!api) return;
+          const judgmentData = {
+            type: type
+          };
+          api.set_judgment(JSON.stringify(judgmentData), function(result) {
+            try {
+              const response = JSON.parse(result);
+              //alert(response);
+              if (!response.success) {
+                console.error("設定判定失敗:", response.error);
+              }
+            } catch (error) {
+              console.error("解析判定回應失敗:", error);
+            }
+          });
+        }
+        // 更新外觀按鈕狀態
+        function updateAppearanceButtons() {
+          // 這裡可以添加按鈕狀態更新邏輯
+        }
+        // 更新類別按鈕狀態
+        function updateClassButtons() {
+          // 這裡可以添加按鈕狀態更新邏輯
+        }
+        // 更新原因按鈕狀態
+        function updateReasonButtons() {
+          // 這裡可以添加按鈕狀態更新邏輯
+        }
+        // 儲存記錄
+        $("#btnSave").on("click", function() {
+          if (!api) {
+            showAlert("系統未初始化");
+            return;
+          }
+          api.save_log(function(result) {
+            try {
+              const response = JSON.parse(result);
+              if (response.success) {
+                showAlert("記錄儲存成功");
+                resetUI();
+                loadCurrentInfo();
+              } else {
+                showAlert("記錄儲存失敗: " + response.error);
+              }
+            } catch (error) {
+              console.error("解析儲存回應失敗:", error);
+              showAlert("系統錯誤");
+            }
+          });
+        });
+        // 初始化事件
+        $(document).ready(function() {
+          console.log("頁面載入完成，開始初始化...");
+          // 檢查必要的 DOM 元素是否存在
+          const requiredElements = [
+            "#loginBtn",
+            "#clearBtn",
+            "#username",
+            "#password",
+            "#message",
+          ];
+          const missingElements = [];
+          requiredElements.forEach((selector) => {
+            if ($(selector).length === 0) {
+              missingElements.push(selector);
+            }
+          });
+          if (missingElements.length > 0) {
+            console.error("缺少必要的 DOM 元素:", missingElements);
+            return;
+          }
+          console.log("所有必要的 DOM 元素都存在");
+          // 初始化 Canvas
+          CanvasImage.initCanvas();
+          // F11 全螢幕切換
+          $(document).on("keydown", function(e) {
+            if (e.key === "F11" && api) {
+              api.toggle_full_screen("");
+            }
+          });
+          console.log("頁面初始化完成");
+        });
+        //////////////////////////////////////////////////////////////
+        // 影像操作相關（已移至 canvas-image.js）
+        //////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////
+        // 執行登入
+        //////////////////////////////////////////////////////////////
+        function performLogin() {
+          console.log("performLogin 函數開始執行");
+          if (!api) {
+            console.error("API 物件未準備就緒");
+            showMessage("登入系統未準備就緒", "error");
+            return;
+          }
+          console.log("API 物件已準備就緒:", api);
+          // 獲取輸入值
+          const username = $("#username").val().trim();
+          const password = $("#password").val().trim();
+          console.log("輸入的帳號密碼:", {
+            username,
+            password: password ? "***" : "",
+          });
+          // 驗證輸入
+          if (!username) {
+            showMessage("請輸入帳號", "error");
+            $("#username").focus();
+            return;
+          }
+          if (!password) {
+            showMessage("請輸入密碼", "error");
+            $("#password").focus();
+            return;
+          }
+          // 顯示載入狀態
+          showMessage("登入中...", "info");
+          $("#loginBtn").prop("disabled", true).text("登入中...");
+          // 準備登入資料
+          const loginData = {
+            username: username,
+            password: password,
+          };
+          console.log("準備調用 API 登入方法，登入資料:", loginData);
+          // 調用 Python 後端登入方法
+          try {
+            console.log("調用 api.login...");
+            const result = api.login(JSON.stringify(loginData));
+            console.log("api.login 返回結果:", result, typeof result);
+            // 檢查是否為 Promise
+            if (result && typeof result.then === "function") {
+              // 如果是 Promise，等待結果
+              console.log("等待 Promise 結果...");
+              result
+                .then(function(resultStr) {
+                  console.log("Promise 完成，結果:", resultStr, typeof resultStr);
+                  handleLoginResult(resultStr);
+                })
+                .catch(function(error) {
+                  console.error("Promise 錯誤:", error);
+                  showMessage("登入失敗: " + error.message, "error");
+                  resetLoginButton();
+                });
+            } else {
+              // 如果不是 Promise，直接處理
+              console.log("直接處理結果:", result);
+              handleLoginResult(result);
+            }
+          } catch (error) {
+            console.error("登入調用失敗:", error);
+            showMessage("登入調用失敗: " + error.message, "error");
+            resetLoginButton();
+          }
+        }
+        // 處理登入結果
+        function handleLoginResult(result) {
+          try {
+            console.log("開始解析登入結果:", result, typeof result);
+            // 確保 result 是字串
+            if (typeof result !== "string") {
+              console.error("登入結果不是字串:", result, typeof result);
+              showMessage("登入結果格式錯誤", "error");
+              resetLoginButton();
+              return;
+            }
+            const response = JSON.parse(result);
+            console.log("解析後的登入結果:", response);
+            // 登入成功，返回帳號資訊
+            if (response.success) {
+              const user_data = response.data;
+              const isAdmin = user_data.is_admin;
+              const username = user_data.username;
+              const account_id = user_data.account_id;
+              console.log("登入成功，用戶資訊:", user_data);
+              console.log("用戶權限:", {
+                isAdmin,
+                username,
+                account_id
+              });
+              if (isAdmin) {
+                $("#btnParameter").show();
+                $("#btnExport").show();
+                $("#btnAccount").show();
+                console.log("管理員權限，顯示所有按鈕");
+              } else {
+                $("#btnParameter").hide();
+                $("#btnExport").hide();
+                $("#btnAccount").hide();
+                console.log("一般用戶權限，隱藏管理員按鈕");
+              }
+              // 顯示成功訊息
+              showMessage(`登入成功！歡迎 ${user_data.username}`, "success");
+              $("#username").val(user_data.username);
+              // 儲存登入資訊到 localStorage（可選）
+              localStorage.setItem("loginInfo", JSON.stringify(user_data));
+              // 切換到主視窗
+              $(".login-container").hide();
+              $(".main-window").show();
+              console.log("已切換到主視窗");
+            } else {
+              // 登入失敗
+              console.log("登入失敗，顯示錯誤訊息:", response.error);
+              showMessage(response.error || "登入失敗", "error");
+              resetLoginButton();
+            }
+          } catch (error) {
+            console.error("解析登入結果失敗:", error);
+            console.error("原始結果:", result);
+            showMessage("登入結果解析失敗: " + error.message, "error");
+            resetLoginButton();
+          }
+        }
+        // 檢查登入狀態
+        function checkLoginStatus() {
+          if (loginBridge) {
+            try {
+              const status = loginBridge.get_login_status();
+              console.log("登入狀態:", status);
+            } catch (error) {
+              console.error("檢查登入狀態失敗:", error);
+            }
+          }
+        }
+        // 清除表單
+        function clearForm() {
+          $("#username").val("").focus();
+          $("#password").val("");
+          $("#message").removeClass().addClass("message").text("");
+        }
+        // 顯示訊息
+        function showMessage(message, type = "info") {
+          console.log("顯示訊息:", message, "類型:", type);
+          const messageElement = $("#message");
+          if (messageElement.length === 0) {
+            console.error("找不到 message 元素");
+            return;
+          }
+          // 移除所有現有的樣式類別
+          messageElement.removeClass();
+          // 添加基本樣式和類型樣式
+          messageElement.addClass("message").addClass(type);
+          // 設置文字內容
+          messageElement.text(message);
+          console.log("訊息元素樣式:", messageElement.attr("class"));
+          console.log("訊息元素文字:", messageElement.text());
+          // 自動隱藏訊息（除了錯誤訊息）
+          if (type !== "error") {
+            setTimeout(function() {
+              messageElement.removeClass().addClass("message").text("");
+            }, 3000);
+          }
+        }
+        // 重置登入按鈕
+        function resetLoginButton() {
+          $("#loginBtn").prop("disabled", false).text("登入");
+        }
+        // 初始化按鈕事件函數
+        function initButtonEvents() {
+          console.log("initButtonEvents 函數開始執行");
+          // 登入按鈕事件
+          $("#loginBtn")
+            .off("click")
+            .on("click", function() {
+              console.log("登入按鈕被點擊");
+              performLogin();
+            });
+          console.log("登入按鈕事件已綁定");
+          // 清除按鈕事件
+          $("#clearBtn")
+            .off("click")
+            .on("click", function() {
+              console.log("清除按鈕被點擊");
+              clearForm();
+            });
+          console.log("清除按鈕事件已綁定");
+          // 頂部按鈕事件
+          $("#btnStandardImage")
+            .off("click")
+            .on("click", function() {
+              console.log("基準圖像登錄按鈕被點擊");
+              if (api) {
+                api.do_action(
+                  JSON.stringify({
+                    action_id: 20,
+                    action_data: {},
+                  })
+                );
+              }
+            });
+          $("#btnParameter")
+            .off("click")
+            .on("click", function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              if (api) api.show_alert_msg("設定按鈕被點擊 - 事件已阻止冒泡");
+              showSetupModal();
+            });
+          $("#btnExport")
+            .off("click")
+            .on("click", function() {
+              console.log("匯出按鈕被點擊");
+              if (api) {
+                const result = api.do_action(
+                  JSON.stringify({
+                    action_id: 21,
+                    action_data: {},
+                  })
+                );
+                try {
+                  const response = JSON.parse(result);
+                  if (response.success) {
+                    console.log("匯出視窗開啟成功:", response.message);
+                  } else {
+                    console.error("匯出視窗開啟失敗:", response.error);
+                    showAlert("匯出視窗開啟失敗: " + response.error);
+                  }
+                } catch (error) {
+                  console.error("解析匯出回應失敗:", error);
+                  showAlert("匯出功能發生錯誤");
+                }
+              }
+            });
+          $("#btnOperator")
+            .off("click")
+            .on("click", function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              if (api) api.show_alert_msg("操作員按鈕被點擊 - 事件已阻止冒泡");
+              console.log("操作員按鈕被點擊");
+              showOperatorPanel();
+            });
+          $("#btnAccount")
+            .off("click")
+            .on("click", function() {
+              console.log("帳號按鈕被點擊");
+              if (api) {
+                api.do_action(
+                  JSON.stringify({
+                    action_id: 18,
+                    action_data: {},
+                  })
+                );
+              }
+            });
+          // 操作員面板按鈕事件
+          $("#btnOperator_OK")
+            .off("click")
+            .on("click", function() {
+              console.log("操作員確定按鈕被點擊");
+              confirmOperatorSelection();
+            });
+          $("#btnOperator_Cancel")
+            .off("click")
+            .on("click", function() {
+              console.log("操作員取消按鈕被點擊");
+              hideOperatorPanel();
+            });
+          // 設定視窗按鈕事件
+          $("#setupCloseBtn")
+            .off("click")
+            .on("click", function() {
+              hideSetupModal();
+            });
+          $("#setupCancelBtn")
+            .off("click")
+            .on("click", function() {
+              hideSetupModal();
+            });
+          $("#setupSaveBtn")
+            .off("click")
+            .on("click", function() {
+              saveSettings();
+            });
+          // 瀏覽按鈕事件
+          $("#browseOcrImage")
+            .off("click")
+            .on("click", function() {
+              browseFolder("ocr_image");
+            });
+          $("#browseDbImage")
+            .off("click")
+            .on("click", function() {
+              browseFolder("db_image");
+            });
+          $("#browseBackup")
+            .off("click")
+            .on("click", function() {
+              browseFolder("backup");
+            });
+          $("#browseExport")
+            .off("click")
+            .on("click", function() {
+              browseFolder("export");
+            });
+          console.log("所有按鈕事件初始化完成");
+        }
+        // 顯示操作員面板
+        function showOperatorPanel() {
+          if (api) api.show_alert_msg("showOperatorPanel 被調用");
+          if (!api) {
+            showAlert("系統未初始化");
+            return;
+          }
+          // 確保主視窗顯示，設定視窗隱藏
+          $(".main-window").hide();
+          $("#setupModal").hide();
+          if (api) api.show_alert_msg("主視窗已隱藏，設定視窗已隱藏");
+          // 顯示操作員面板
+          $("#operatorPanel").show();
+          if (api) api.show_alert_msg("操作員面板已顯示");
+          // 載入操作員列表
+          loadOperatorList();
+        }
+        // 隱藏操作員面板
+        function hideOperatorPanel() {
+          $("#operatorPanel").hide();
+          // 清除選擇狀態
+          $("#operator-list input[type='checkbox']").prop("checked", false);
+          $(".main-window").show();
+        }
+        // 載入操作員列表
+        function loadOperatorList() {
+          if (api) api.show_alert_msg("loadOperatorList 被調用");
+          if (!api) {
+            console.error("API 未初始化");
+            return;
+          }
+          console.log("開始載入操作員列表");
+          // 呼叫後端 API 取得操作員資訊
+          api.load_processor("", function(result) {
+            try {
+              console.log("操作員列表 API 回應:", result);
+              const response = JSON.parse(result);
+              if (response.success) {
+                if (api) api.show_alert_msg("操作員列表載入成功，開始更新顯示");
+                updateOperatorList(response.data);
+              } else {
+                console.error("載入操作員列表失敗:", response.error);
+                showAlert("載入操作員列表失敗: " + response.error);
+              }
+            } catch (error) {
+              console.error("解析操作員列表回應失敗:", error);
+              showAlert("載入操作員列表失敗");
+            }
+          });
+        }
+        // 更新操作員列表顯示
+        function updateOperatorList(operatorList) {
+          if (api) api.show_alert_msg("updateOperatorList 被調用");
+          const tbody = $("#operator-list");
+          tbody.empty();
+          if (!operatorList || operatorList.length === 0) {
+            tbody.append(`
+            <tr>
+              <td colspan="2" style="text-align: center; color: #666;">
+                暫無操作員資料
+              </td>
+            </tr>
+          `);
+            if (api) api.show_alert_msg("操作員列表為空，顯示空資料訊息");
+            return;
+          }
+          operatorList.forEach(function(operator) {
+            const row = `
+            <tr>
+              <td>
+                <input type="checkbox" 
+                       data-account="${operator.account}" 
+                       data-name="${operator.name}"
+                       ${operator.checked ? 'checked' : ''}>
+              </td>
+              <td>${operator.name} (${operator.account})</td>
+            </tr>
+          `;
+            tbody.append(row);
+          });
+          console.log("操作員列表更新完成，共", operatorList.length, "位操作員");
+        }
+        // 確認操作員選擇
+        function confirmOperatorSelection() {
+          const selectedOperators = [];
+          // 收集已選擇的操作員
+          $("#operator-list input[type='checkbox']:checked").each(function() {
+            const account = $(this).data("account");
+            const name = $(this).data("name");
+            selectedOperators.push({
+              account: account,
+              name: name
+            });
+          });
+          // 檢查是否至少選擇一位操作員
+          if (selectedOperators.length === 0) {
+            showAlert("請至少選擇一位操作員");
+            return;
+          }
+          console.log("已選擇的操作員:", selectedOperators);
+          // 這裡可以添加後端 API 調用來保存選擇的操作員
+          // 目前先顯示成功訊息並關閉面板
+          //showAlert("操作員選擇完成");
+          hideOperatorPanel();
+          // 取得所有已選操作員名稱並以逗號分隔
+          const selectedNames = selectedOperators.map(op => op.name).join(',');
+          console.log("已選操作員名稱列表:", selectedNames);
+          // 更新當前操作員顯示（選擇第一位作為當前操作員）
+          if (selectedOperators.length > 0) {
+            $("#userName").text(selectedNames);
+            api.update_processor(JSON.stringify({
+              'selected_operator': selectedNames
+            }));
+          }
+        }
+        // 設定視窗相關函數
+        function showSetupModal() {
+          if (api) api.show_alert_msg("showSetupModal 被調用");
+          // 隱藏主視窗，顯示設定視窗（就像登入和主畫面的切換一樣）
+          $(".main-window").hide();
+          $("#setupModal").addClass("show");
+          // 調試：檢查設定視窗的狀態
+          const modal = $("#setupModal");
+          const content = $(".setup-content");
+          const header = $(".setup-header");
+          const body = $(".setup-body");
+          const footer = $(".setup-footer");
+          if (api) {
+            api.show_alert_msg(`設定視窗顯示狀態: ${modal.is(":visible")}`);
+            api.show_alert_msg(`設定內容存在: ${content.length > 0}`);
+            api.show_alert_msg(`設定內容可見: ${content.is(":visible")}`);
+            api.show_alert_msg(`設定內容高度: ${content.height()}px`);
+            api.show_alert_msg(`標題存在: ${header.length > 0}, 高度: ${header.height()}px`);
+            api.show_alert_msg(`內容區存在: ${body.length > 0}, 高度: ${body.height()}px`);
+            api.show_alert_msg(`底部存在: ${footer.length > 0}, 高度: ${footer.height()}px`);
+            // 強制設定內容可見
+            content.css({
+              'display': 'block !important',
+              'visibility': 'visible !important',
+              'opacity': '1 !important'
+            });
+          }
+          // 載入當前設定
+          if (api) {
+            loadCurrentSettings();
+          }
+        }
+
+        function hideSetupModal() {
+          if (api) api.show_alert_msg("hideSetupModal 被調用");
+          // 隱藏設定視窗
+          $("#setupModal").removeClass("show");
+          // 確保主視窗顯示（如果它被隱藏了）
+          if (!$(".main-window").is(":visible")) {
+            $(".main-window").show();
+          }
+          if (api) api.show_alert_msg("設定視窗已隱藏");
+        }
+
+        function loadCurrentSettings() {
+          if (api) api.show_alert_msg("loadCurrentSettings 被調用");
+          if (!api) {
+            if (api) api.show_alert_msg("API 未初始化，無法載入設定");
+            return;
+          }
+          if (api) api.show_alert_msg("開始調用 api.get_settings");
+          // 使用回調函數的方式調用 API
+          api.get_settings(function(result) {
+            if (api) api.show_alert_msg("api.get_settings 回調結果: " + result + " 類型: " + typeof result);
+            try {
+              if (typeof result === 'string') {
+                const response = JSON.parse(result);
+                if (api) api.show_alert_msg("解析後的設定回應: " + JSON.stringify(response));
+                if (response.success) {
+                  const settings = response.data;
+                  if (api) api.show_alert_msg("設定資料: " + JSON.stringify(settings));
+                  // 載入 Cognex 設定
+                  $("#setupCognexIP").val(settings.cognex.ip);
+                  $("#setupCognexPort").val(settings.cognex.port);
+                  $("#setupPicWaitTime").val(settings.timing.pic_wait_time);
+                  $("#setupRetryTime").val(settings.timing.ocr_retry_time);
+                  // 載入路徑設定
+                  $("#setupOcrImagePath").val(settings.paths.ocr_image_save_path);
+                  $("#setupDbImagePath").val(settings.paths.db_image_save_path);
+                  $("#setupBackupPath").val(settings.paths.ocr_backup_path);
+                  $("#setupExportPath").val(settings.paths.export_default_path);
+                  // 載入圖片設定
+                  $("#setupOffsetX").val(settings.image.offset_x);
+                  $("#setupOffsetY").val(settings.image.offset_y);
+                  $("#setupScale").val(settings.image.scale);
+                  if (api) api.show_alert_msg("設定載入成功");
+                } else {
+                  if (api) api.show_alert_msg("載入設定失敗: " + response.error);
+                  showAlert("載入設定失敗: " + response.error);
+                }
+              } else {
+                if (api) api.show_alert_msg("API 返回結果不是字串: " + typeof result + " " + result);
+                showAlert("載入設定失敗: API 返回格式錯誤");
+              }
+            } catch (error) {
+              if (api) api.show_alert_msg("解析設定回應失敗: " + error.message);
+              showAlert("載入設定失敗: " + error.message);
+            }
+          });
+        }
+
+        function saveSettings() {
+          if (!api) {
+            showAlert("系統未初始化");
+            return;
+          }
+          // 收集設定資料
+          const settingsData = {
+            cognex: {
+              ip: $("#setupCognexIP").val(),
+              port: parseInt($("#setupCognexPort").val()) || 8601,
+              port_cmd: 8604
+            },
+            paths: {
+              ocr_image_save_path: $("#setupOcrImagePath").val(),
+              db_image_save_path: $("#setupDbImagePath").val(),
+              ocr_backup_path: $("#setupBackupPath").val(),
+              export_default_path: $("#setupExportPath").val()
+            },
+            image: {
+              offset_x: parseInt($("#setupOffsetX").val()) || 0,
+              offset_y: parseInt($("#setupOffsetY").val()) || 0,
+              scale: parseFloat($("#setupScale").val()) || 1.0
+            },
+            timing: {
+              ocr_retry_time: parseInt($("#setupRetryTime").val()) || 1,
+              pic_wait_time: parseInt($("#setupPicWaitTime").val()) || 5000
+            }
+          };
+          console.log("準備儲存設定:", settingsData);
+          // 儲存設定
+          api.save_settings(JSON.stringify(settingsData), function(result) {
+            try {
+              const response = JSON.parse(result);
+              if (response.success) {
+                showAlert("設定儲存成功");
+                hideSetupModal();
+              } else {
+                console.error("儲存設定失敗:", response.error);
+                showAlert("儲存設定失敗: " + response.error);
+              }
+            } catch (error) {
+              console.error("解析儲存回應失敗:", error);
+              showAlert("儲存設定失敗");
+            }
+          });
+        }
+
+        function browseFolder(folderType) {
+          if (!api) {
+            showAlert("系統未初始化");
+            return;
+          }
+          api.browse_folder(folderType, function(result) {
+            try {
+              const response = JSON.parse(result);
+              if (response.success) {
+                const folderPath = response.data;
+                // 根據類型更新對應的輸入欄位
+                switch (folderType) {
+                  case "ocr_image":
+                    $("#setupOcrImagePath").val(folderPath);
+                    break;
+                  case "db_image":
+                    $("#setupDbImagePath").val(folderPath);
+                    break;
+                  case "backup":
+                    $("#setupBackupPath").val(folderPath);
+                    break;
+                  case "export":
+                    $("#setupExportPath").val(folderPath);
+                    break;
+                }
+                console.log(`選擇${folderType}資料夾:`, folderPath);
+              } else {
+                console.error("瀏覽資料夾失敗:", response.error);
+                if (response.error !== "未選擇資料夾") {
+                  showAlert("瀏覽資料夾失敗: " + response.error);
+                }
+              }
+            } catch (error) {
+              console.error("解析瀏覽回應失敗:", error);
+              showAlert("瀏覽資料夾失敗");
+            }
+          });
+        }
+        // 點擊設定視窗外部關閉視窗
+        $(document).on("click", function(e) {
+          // 只有當設定視窗可見且點擊的是設定視窗背景時才關閉
+          if ($(e.target).hasClass("setup-modal") && $("#setupModal").is(":visible")) {
+            if (api) api.show_alert_msg("全局點擊事件觸發 hideSetupModal");
+            hideSetupModal();
+          }
+        });
+        // ESC 鍵關閉設定視窗
+        $(document).on("keydown", function(e) {
+          if (e.key === "Escape" && $("#setupModal").is(":visible")) {
+            hideSetupModal();
+          }
+        });
+      </script>
+  </body>
+
+</html>
