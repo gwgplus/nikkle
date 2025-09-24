@@ -1799,20 +1799,30 @@ class MainBridge(QObject):
             
             if not self.export_window:
                 # 建立新的匯出視窗
-                default_dir = getattr(self.config_manager.Config.Settings.Paths, 'Export_Default_Path', '')
-                self.export_window = ExportWindow(default_dir, self.db_manager)
-                # 設定為最上層視窗
-                self.export_window.setWindowFlags(Qt.WindowStaysOnTopHint)
-                # 使用非模態視窗，避免主視窗被卡住
-                self.export_window.show()
+                try:
+                    default_dir = getattr(self.config_manager.Config.Settings.Paths, 'Export_Default_Path', '')
+                except AttributeError:
+                    default_dir = ''
                 
-                # 監聽視窗關閉信號
-                self.export_window.closeEvent = self.on_export_window_closed
-                
-                return json.dumps({
-                    'success': True,
-                    'message': '匯出視窗已開啟'
-                }, ensure_ascii=False)
+                try:
+                    self.export_window = ExportWindow(default_dir, self.db_manager)
+                    # 設定為最上層視窗
+                    self.export_window.setWindowFlags(Qt.WindowStaysOnTopHint)
+                    # 使用非模態視窗，避免主視窗被卡住
+                    self.export_window.show()
+                    
+                    # 監聽視窗關閉信號
+                    self.export_window.closeEvent = self.on_export_window_closed
+                    
+                    return json.dumps({
+                        'success': True,
+                        'message': '匯出視窗已開啟'
+                    }, ensure_ascii=False)
+                except Exception as export_error:
+                    return json.dumps({
+                        'success': False,
+                        'error': f'建立匯出視窗失敗: {str(export_error)}'
+                    }, ensure_ascii=False)
             else:
                 # 如果視窗已存在，將其置前
                 self.export_window.raise_()
