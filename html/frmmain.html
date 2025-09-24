@@ -623,21 +623,30 @@
           $(".select-btn").hide();
           $("#selectText").text("判定為摺痕");
           $("#selectText").show();
-          $("#appearancePanel").show();
+          // 延遲顯示面板，確保 setJudgment 完成後再顯示
+          setTimeout(function() {
+            $("#appearancePanel").show();
+          }, 100);
         });
         $("#btnCheckError").on("click", function() {
           setJudgment("ocr_error");
           $(".select-btn").hide();
           $("#selectText").text("判定為辨識錯誤");
           $("#selectText").show();
-          $("#appearancePanel").show();
+          // 延遲顯示面板，確保 setJudgment 完成後再顯示
+          setTimeout(function() {
+            $("#appearancePanel").show();
+          }, 100);
         });
         $("#btnCantOCR").on("click", function() {
           setJudgment("cannot_ocr");
           $(".select-btn").hide();
           $("#selectText").text("判定為無法辯識");
           $("#selectText").show();
-          $("#appearancePanel").show();
+          // 延遲顯示面板，確保 setJudgment 完成後再顯示
+          setTimeout(function() {
+            $("#appearancePanel").show();
+          }, 100);
         });
         // 外觀判定按鈕
         $("#btnOK").on("click", function() {
