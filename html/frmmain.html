@@ -619,17 +619,27 @@
           $("#btnSave").show();
         });
         $("#btnMark").on("click", function() {
+          console.log("btnMark clicked - before operations");
           $(".select-btn").hide();
           $("#selectText").text("判定為摺痕");
           $("#selectText").show();
+          console.log("About to show appearancePanel");
           $("#appearancePanel").show();
-          setJudgment("fold");
-          // 強制確保面板顯示
-          setTimeout(function() {
-            if ($("#appearancePanel").is(":hidden")) {
-              $("#appearancePanel").show();
-            }
-          }, 50);
+          console.log("appearancePanel visible:", $("#appearancePanel").is(":visible"));
+          
+          // 使用 requestAnimationFrame 確保 DOM 更新後再調用 API
+          requestAnimationFrame(function() {
+            setJudgment("fold");
+            // 再次確保面板顯示
+            setTimeout(function() {
+              console.log("Checking appearancePanel after API call");
+              console.log("appearancePanel visible:", $("#appearancePanel").is(":visible"));
+              if ($("#appearancePanel").is(":hidden")) {
+                console.log("Re-showing appearancePanel");
+                $("#appearancePanel").show();
+              }
+            }, 100);
+          });
         });
         $("#btnCheckError").on("click", function() {
           $(".select-btn").hide();
