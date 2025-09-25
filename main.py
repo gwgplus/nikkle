@@ -444,8 +444,23 @@ class MainBridge(QObject):
             'data': self.selected_operator
         }, ensure_ascii=False)
         
-    @pyqtSlot(str, result=str)
-    def login(self, login_data_json: str) -> str:
+    @pyqtSlot(result=str)
+    def test_api(self) -> str:
+        """測試 API 連接"""
+        try:
+            result = {
+                'success': True,
+                'message': 'API 連接正常',
+                'timestamp': str(datetime.now())
+            }
+            print("API 測試成功")
+            return json.dumps(result, ensure_ascii=False)
+        except Exception as e:
+            print(f"API 測試失敗: {e}")
+            return json.dumps({'success': False, 'error': str(e)}, ensure_ascii=False)
+    
+    @pyqtSlot(str)
+    def login(self, login_data_json: str):
         """登入驗證"""
         try:
             if not self.db_manager:
@@ -456,7 +471,8 @@ class MainBridge(QObject):
                 print(f"登入失敗: {result}")
                 # 觸發認證失敗事件
                 
-                return json.dumps(result, ensure_ascii=False)
+                self.view.run_javascript('access_login_result(' + json.dumps(result, ensure_ascii=False) + ')')
+                #return json.dumps(result, ensure_ascii=False)
             
             login_data = json.loads(login_data_json)
             username = login_data.get('username', '').strip()
@@ -464,7 +480,7 @@ class MainBridge(QObject):
             
             print(f"嘗試登入: username={username}, password={'*' * len(password)}")
             
-            if not username or not password:
+            if not username :
                 result = {
                     'success': False,
                     'error': '請輸入帳號和密碼'
@@ -472,7 +488,8 @@ class MainBridge(QObject):
                 print(f"登入失敗: {result}")
                 # 觸發認證失敗事件
                 
-                return json.dumps(result, ensure_ascii=False)
+                self.view.run_javascript('access_login_result(' + json.dumps(result, ensure_ascii=False) + ')')
+                #return json.dumps(result, ensure_ascii=False)
             
             # 查詢資料庫驗證帳號密碼
             account = self.db_manager.get_account_by_id(username)
@@ -485,10 +502,11 @@ class MainBridge(QObject):
                 print(f"登入失敗: {result}")
                 # 觸發認證失敗事件
                 
-                return json.dumps(result, ensure_ascii=False)
+                self.view.run_javascript('access_login_result(' + json.dumps(result, ensure_ascii=False) + ')')
+                #return json.dumps(result, ensure_ascii=False)
             
             # 驗證密碼
-            if account.get('Password') != password:
+            if account.get('NeedPassword') == 1 and account.get('Password') != password:
                 result = {
                     'success': False,
                     'error': '密碼錯誤'
@@ -496,7 +514,8 @@ class MainBridge(QObject):
                 print(f"登入失敗: {result}")
                 # 觸發認證失敗事件
                 
-                return json.dumps(result, ensure_ascii=False)
+                self.view.run_javascript('access_login_result(' + json.dumps(result, ensure_ascii=False) + ')')
+                #return json.dumps(result, ensure_ascii=False)
             
             # 登入成功，返回帳號資訊
             self.account = account.get('Account')
@@ -527,8 +546,9 @@ class MainBridge(QObject):
                 'is_admin': user_data['is_admin']
             }
             
+            self.view.run_javascript('access_login_result(' + json.dumps(result, ensure_ascii=False) + ')')
+            #return json.dumps(result, ensure_ascii=False)
             
-            return json.dumps(result, ensure_ascii=False)
             
         except Exception as e:
             result = {

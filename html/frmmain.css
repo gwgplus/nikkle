@@ -4,7 +4,10 @@
     padding: 0;
     box-sizing: border-box;
 }
-
+.info-item{
+    margin-right: 10px;
+    font-size: 18px;
+}
 /* 設定視窗樣式 */
 .setup-modal {
     position: fixed;
@@ -385,12 +388,12 @@ body {
 }
 
 .info-label {
-    font-size: 14.25px;
+    font-size: 18px;
     color: #333;
 }
 
 .info-value {
-    font-size: 14.25px;
+    font-size: 18px;
     font-weight: bold;
     color: #333;
 }
