@@ -6,7 +6,7 @@ import socket
 import threading
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QMessageBox, QFileDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QMessageBox, QFileDialog, QDialog, QLabel, QProgressBar
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWebChannel import QWebChannel
 from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, pyqtSignal, Qt, QTimer, QCoreApplication
@@ -271,7 +271,113 @@ class TcpClient:
         if self.socket:
             self.socket.close()
         self.is_connected = False
+class PingHost:
+    """Ping 主機"""
+    def __init__(self, host):
+        self.host = host
+    def ping(self)->bool:
+        """Ping 主機"""
+        try:
+            # Windows 使用 -n 參數, 其他系統使用 -c 參數
+            param = '-n' if sys.platform.lower()=='win32' else '-c'
+            # 執行 ping 指令並檢查回傳值
+            response = os.system(f"ping {param} 1 {self.host}")
+            return response == 0
+        except Exception as e:
+            print(f"Ping 失敗: {e}")
+            return False
 
+class InitDialog(QDialog):
+    """初始化對話框"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("系統初始化")
+        self.setFixedSize(400, 200)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        
+        # 設置樣式
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #f0f0f0;
+            }
+            QLabel {
+                font-size: 14px;
+                color: #333;
+                padding: 10px;
+            }
+            QProgressBar {
+                border: 2px solid #ccc;
+                border-radius: 5px;
+                text-align: center;
+                font-weight: bold;
+            }
+            QProgressBar::chunk {
+                background-color: #4CAF50;
+                border-radius: 3px;
+            }
+        """)
+        
+        # 創建佈局
+        layout = QVBoxLayout()
+        
+        # 標題
+        title_label = QLabel("系統正在初始化...")
+        title_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #2c3e50;")
+        title_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title_label)
+        
+        # 狀態標籤
+        self.status_label = QLabel("等待初始化 TROCR...")
+        self.status_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.status_label)
+        
+        # 進度條
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        layout.addWidget(self.progress_bar)
+        
+        # 詳細資訊標籤
+        self.detail_label = QLabel("")
+        self.detail_label.setAlignment(Qt.AlignCenter)
+        self.detail_label.setStyleSheet("font-size: 12px; color: #666;")
+        layout.addWidget(self.detail_label)
+        
+        self.setLayout(layout)
+        
+        # 計時器
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_progress)
+        self.progress_value = 0
+        self.timer.start(100)  # 每100ms更新一次
+        
+    def update_progress(self):
+        """更新進度條"""
+        if self.progress_value < 90:
+            self.progress_value += 2
+            self.progress_bar.setValue(self.progress_value)
+        else:
+            self.progress_bar.setValue(90)
+            
+    def set_status(self, status: str, detail: str = ""):
+        """設置狀態"""
+        self.status_label.setText(status)
+        self.detail_label.setText(detail)
+        QApplication.processEvents()
+        
+    def set_progress(self, value: int):
+        """設置進度"""
+        self.progress_bar.setValue(value)
+        QApplication.processEvents()
+        
+    def complete(self):
+        """完成初始化"""
+        self.progress_bar.setValue(100)
+        self.status_label.setText("初始化完成！")
+        self.detail_label.setText("系統已準備就緒")
+        QApplication.processEvents()
+        # 使用 QTimer 而不是 time.sleep 來避免阻塞
+        QTimer.singleShot(1000, self.accept)  # 1秒後關閉對話框
 
 class MainBridge(QObject):
     """主程式的橋接類別，處理 Python 和 JavaScript 之間的通信"""
@@ -281,10 +387,12 @@ class MainBridge(QObject):
     show_alert = pyqtSignal(str)      # 顯示警告信號
     show_result = pyqtSignal(str, bool)  # 顯示結果信號
     
-    def __init__(self, config_manager: ConfigManager, view=None):
+    def __init__(self, config_manager: ConfigManager, view=None, main_window=None):
         super().__init__()
         self.config_manager = config_manager
         self.view = view
+        self.main_window = main_window
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] MainBridge 初始化，main_window: {self.main_window}")
         self.tcp_client = None
         self.work_status = WorkStatus.NONE
         self.ocr_check_info = OCRCheckInfo()
@@ -305,13 +413,112 @@ class MainBridge(QObject):
         self.start_time = datetime.now()
         self.account_window = None  # 帳號管理視窗
         self.export_window = None   # 匯出視窗
-        self.yolo_ocr = YOLOOCR()
+        self.is_full_screen = True
         
         # 載入設定
         self.load_settings()
         
         # 初始化資料庫
         self.init_database()
+        
+        # 顯示初始化視窗
+        self.show_init_dialog()
+        
+    def show_init_dialog(self):
+        """顯示初始化對話框"""
+        import datetime
+        
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 開始創建初始化對話框")
+        # 創建初始化對話框
+        init_dialog = InitDialog()
+        
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 顯示初始化對話框")
+        # 顯示對話框
+        init_dialog.show()
+        init_dialog.raise_()  # 將對話框提到最前面
+        init_dialog.activateWindow()  # 激活對話框
+        QApplication.processEvents()
+        
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 設置對話框狀態")
+        init_dialog.set_status("等待初始化 TROCR...", "正在載入 AI 模型...")
+        QApplication.processEvents()
+        
+        # 使用定時器延遲一瞬間確保對話框完全顯示
+        def delayed_init():
+            try:
+                # 初始化 TROCR
+                print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 開始初始化 TROCR...")
+                self.yolo_ocr = YOLOOCR()
+                print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] TROCR 初始化完成")
+                
+                # 更新狀態為網路檢查
+                print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 開始網路檢查")
+                init_dialog.set_status("等待網路就緒...", f"正在檢查 {self.server_ip} 連線...")
+                init_dialog.set_progress(50)
+                QApplication.processEvents()
+                
+                # 檢查網路連線
+                ping_host = PingHost(self.server_ip)
+                retry_count = 0
+                max_retries = 30  # 最多重試30次（30秒）
+                
+                while retry_count < max_retries:
+                    if ping_host.ping():
+                        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 網路連線成功: {self.server_ip}")
+                        break
+                    else:
+                        retry_count += 1
+                        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 網路連線失敗，第 {retry_count} 次重試...")
+                        init_dialog.set_status("等待網路就緒...", f"連線失敗，第 {retry_count} 次重試... ({self.server_ip})")
+                        QApplication.processEvents()
+                        time.sleep(1)
+                
+                if retry_count >= max_retries:
+                    print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 網路連線超時: {self.server_ip}")
+                    init_dialog.set_status("網路連線超時", f"無法連接到 {self.server_ip}，請檢查網路設定")
+                    QApplication.processEvents()
+                    time.sleep(3)  # 顯示錯誤訊息3秒
+                
+                # 完成初始化
+                print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 初始化完成，準備關閉對話框")
+                init_dialog.complete()
+                
+                # 連接對話框關閉信號到顯示主視窗
+                def show_main_window():
+                    print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 準備顯示主視窗...")
+                    if self.main_window:
+                        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 以全螢幕模式顯示主視窗")
+                        self.main_window.showFullScreen()  # 全螢幕顯示
+                        self.main_window.raise_()  # 將視窗提到最前面
+                        self.main_window.activateWindow()  # 激活視窗
+                    else:
+                        print("main_window 為 None")
+                
+                # 使用 QTimer 確保對話框完全關閉後再顯示主視窗
+                QTimer.singleShot(1500, show_main_window)
+                
+            except Exception as e:
+                import traceback
+                print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 初始化失敗: {e}")
+                print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 錯誤詳情: {traceback.format_exc()}")
+                init_dialog.set_status("初始化失敗", str(e))
+                QApplication.processEvents()
+                
+                # 即使初始化失敗也顯示主視窗
+                def show_main_window_on_error():
+                    print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 初始化失敗，但仍顯示主視窗...")
+                    if self.main_window:
+                        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 顯示主視窗")
+                        self.main_window.show()
+                        self.main_window.raise_()
+                        self.main_window.activateWindow()
+                    else:
+                        print("main_window 為 None")
+                
+                QTimer.singleShot(3500, show_main_window_on_error)
+        
+        # 延遲一點點時間確保對話框完全顯示
+        QTimer.singleShot(100, delayed_init)
     
     def load_settings(self):
         """載入設定"""
@@ -433,7 +640,41 @@ class MainBridge(QObject):
             self.db_manager = None
             # 建立一個模擬的資料庫管理器，避免程式崩潰
             self.db_manager = MockDatabaseManager()
-    
+    @pyqtSlot(str, result=str)
+    def toggle_full_screen(self, data: str) -> str:
+        """切換全螢幕模式"""
+        print(f"[toggle_full_screen] 被調用，data: {data}")
+        print(f"[toggle_full_screen] main_window: {self.main_window}")
+        print(f"[toggle_full_screen] is_full_screen: {self.is_full_screen}")
+        
+        try:
+            if self.main_window:
+                if self.is_full_screen:
+                    # 從全螢幕切換到最大化視窗
+                    print("[toggle_full_screen] 執行：全螢幕 → 最大化視窗")
+                    self.main_window.showNormal()  # 先恢復正常
+                    self.main_window.showMaximized()  # 再最大化
+                    self.is_full_screen = False
+                    result = json.dumps({'success': True, 'mode': 'maximized'}, ensure_ascii=False)
+                    print(f"[toggle_full_screen] 返回結果: {result}")
+                    return result
+                else:
+                    # 從最大化切換到全螢幕
+                    print("[toggle_full_screen] 執行：最大化視窗 → 全螢幕")
+                    self.main_window.showFullScreen()
+                    self.is_full_screen = True
+                    result = json.dumps({'success': True, 'mode': 'fullscreen'}, ensure_ascii=False)
+                    print(f"[toggle_full_screen] 返回結果: {result}")
+                    return result
+            else:
+                print("[toggle_full_screen] 錯誤：主視窗未初始化")
+                return json.dumps({'success': False, 'error': '主視窗未初始化'}, ensure_ascii=False)
+        except Exception as e:
+            print(f"[toggle_full_screen] 異常: {e}")
+            import traceback
+            traceback.print_exc()
+            return json.dumps({'success': False, 'error': str(e)}, ensure_ascii=False)
+            
     @pyqtSlot(str, result=str)
     def update_processor(self, processor_data_json: str) -> str:
         """取得操作者(帳號)列表"""
@@ -463,6 +704,9 @@ class MainBridge(QObject):
     def login(self, login_data_json: str):
         """登入驗證"""
         try:
+            print(f"[CRASH_DEBUG] 開始執行 login 方法，時間: {datetime.now()}")
+            import traceback
+            print(f"[CRASH_DEBUG] 當前調用堆疊:\n{traceback.format_stack()}")
             if not self.db_manager:
                 result = {
                     'success': False,
@@ -546,11 +790,16 @@ class MainBridge(QObject):
                 'is_admin': user_data['is_admin']
             }
             
+            print(f"[CRASH_DEBUG] 準備執行 JavaScript，時間: {datetime.now()}")
             self.view.run_javascript('access_login_result(' + json.dumps(result, ensure_ascii=False) + ')')
+            print(f"[CRASH_DEBUG] JavaScript 執行完成，時間: {datetime.now()}")
             #return json.dumps(result, ensure_ascii=False)
             
             
         except Exception as e:
+            print(f"[CRASH_DEBUG] login 方法發生異常: {e}")
+            import traceback
+            print(f"[CRASH_DEBUG] 異常詳細信息:\n{traceback.format_exc()}")
             result = {
                 'success': False,
                 'error': f'登入失敗: {str(e)}'
@@ -976,16 +1225,37 @@ class MainBridge(QObject):
                     'error': '圖片檔案不存在'
                 }, ensure_ascii=False)
             
+            # 從設定檔讀取圖片處理參數
+            image_config = self.config_manager.Config.ImageProcessing
+            scale_params = {
+                'scale': image_config.Scale,
+                'offsetX': image_config.Offset_X,
+                'offsetY': image_config.Offset_Y
+            }
+            
+            print(f"圖片處理參數: scale={scale_params['scale']}, offsetX={scale_params['offsetX']}, offsetY={scale_params['offsetY']}")
+            
             # 轉換為 Web 友好的路徑格式
             if self.view:
                 # 將路徑轉換為 Web 友好的格式
                 image_url = self.normalize_path_for_web(image_path)
                 print(f"手動顯示圖片: {image_path} -> {image_url}")
-                self.view.run_javascript(f'showImage("{image_url}")')
+                
+                # 先設定縮放參數，再顯示圖片
+                js_code = f"""
+                CanvasImage.setScaleParams({scale_params['scale']}, {scale_params['offsetX']}, {scale_params['offsetY']});
+                showImage("{image_url}", {{
+                    scale: {scale_params['scale']},
+                    offsetX: {scale_params['offsetX']},
+                    offsetY: {scale_params['offsetY']}
+                }});
+                """
+                self.view.run_javascript(js_code)
             
             return json.dumps({
                 'success': True,
-                'message': '圖片顯示成功'
+                'message': '圖片顯示成功',
+                'scale_params': scale_params
             }, ensure_ascii=False)
             
         except Exception as e:
@@ -1405,21 +1675,6 @@ class MainBridge(QObject):
             return json.dumps({
                 'success': True,
                 'data': processor_list
-            }, ensure_ascii=False)
-        except Exception as e:
-            return json.dumps({
-                'success': False,
-                'error': str(e)
-            }, ensure_ascii=False)
-    
-    @pyqtSlot(str, result=str)
-    def toggle_full_screen(self, data: str) -> str:
-        """切換全螢幕模式"""
-        try:
-            # 這裡可以實現全螢幕切換邏輯
-            return json.dumps({
-                'success': True,
-                'message': '全螢幕模式切換'
             }, ensure_ascii=False)
         except Exception as e:
             return json.dumps({
@@ -2076,9 +2331,14 @@ class WebViewWrapper:
     def run_javascript(self, js_code):
         """執行 JavaScript 代碼"""
         try:
+            print(f"[CRASH_DEBUG] WebViewWrapper 開始執行 JavaScript: {datetime.now()}")
+            print(f"[CRASH_DEBUG] JavaScript 代碼長度: {len(js_code)}")
             self.web_view.page().runJavaScript(js_code)
+            print(f"[CRASH_DEBUG] WebViewWrapper JavaScript 執行完成: {datetime.now()}")
         except Exception as e:
-            print(f"執行 JavaScript 失敗: {e}")
+            print(f"[CRASH_DEBUG] WebViewWrapper 執行 JavaScript 失敗: {e}")
+            import traceback
+            print(f"[CRASH_DEBUG] WebViewWrapper JavaScript 執行錯誤詳情:\n{traceback.format_exc()}")
 
 
 class MainWindow(QMainWindow):
@@ -2089,6 +2349,8 @@ class MainWindow(QMainWindow):
         self.config_manager = ConfigManager()
         self.bridge = None  # 先設為 None，在 init_ui 中創建
         self.init_ui()
+        # 先隱藏主視窗，等初始化完成後再顯示
+        self.hide()
     
     def init_ui(self):
         """初始化使用者介面"""
@@ -2112,9 +2374,27 @@ class MainWindow(QMainWindow):
         self.channel = QWebChannel()
         self.web_view.page().setWebChannel(self.channel)
         
+        # 監控 WebChannel 狀態
+        def monitor_webchannel():
+            try:
+                print(f"[CRASH_DEBUG] WebChannel 狀態檢查: {datetime.now()}")
+                # 檢查 WebChannel 是否正常
+                if hasattr(self.channel, 'blockSignals'):
+                    print(f"[CRASH_DEBUG] WebChannel 正常")
+                else:
+                    print(f"[CRASH_DEBUG] WebChannel 異常")
+            except Exception as e:
+                print(f"[CRASH_DEBUG] WebChannel 監控失敗: {e}")
+        
+        # 每5秒檢查一次 WebChannel 狀態
+        # self.webchannel_timer = QTimer()
+        # self.webchannel_timer.timeout.connect(monitor_webchannel)
+        # self.webchannel_timer.start(5000)
+        
         # 創建橋接物件，傳遞一個包裝物件，提供 run_javascript 方法
         web_wrapper = WebViewWrapper(self.web_view)
-        self.bridge = MainBridge(self.config_manager, web_wrapper)
+        print(f"創建 MainBridge，main_window: {self}")
+        self.bridge = MainBridge(self.config_manager, web_wrapper, self)
         
         # 註冊橋接物件
         self.channel.registerObject('api', self.bridge)
@@ -2167,9 +2447,14 @@ class MainWindow(QMainWindow):
     def run_javascript(self, js_code):
         """執行 JavaScript 代碼"""
         try:
+            print(f"[CRASH_DEBUG] MainWindow 開始執行 JavaScript: {datetime.now()}")
+            print(f"[CRASH_DEBUG] JavaScript 代碼長度: {len(js_code)}")
             self.web_view.page().runJavaScript(js_code)
+            print(f"[CRASH_DEBUG] MainWindow JavaScript 執行完成: {datetime.now()}")
         except Exception as e:
-            print(f"執行 JavaScript 失敗: {e}")
+            print(f"[CRASH_DEBUG] MainWindow 執行 JavaScript 失敗: {e}")
+            import traceback
+            print(f"[CRASH_DEBUG] MainWindow JavaScript 執行錯誤詳情:\n{traceback.format_exc()}")
     
     def closeEvent(self, event):
         """關閉視窗事件"""
@@ -2183,19 +2468,52 @@ class MainWindow(QMainWindow):
 
 def main():
     """主程式"""
+    import traceback
+    import logging
+    
+    # 設定詳細的日誌記錄
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler('debug.log', encoding='utf-8'),
+            logging.StreamHandler()
+        ]
+    )
+    
     try:
+        print("程式開始執行...")
+        logging.info("程式開始執行...")
+        
         # 建立應用程式
         app = QApplication(sys.argv)
+        logging.info("QApplication 建立成功")
         
-        # 建立主視窗
+        # 建立主視窗（會自動處理顯示邏輯）
         window = MainWindow()
-        window.show()
+        logging.info("MainWindow 建立成功")
         
         # 執行應用程式
+        logging.info("開始執行應用程式主循環...")
         sys.exit(app.exec_())
         
     except Exception as e:
-        QMessageBox.critical(None, "錯誤", f"程式執行失敗: {e}")
+        error_msg = f"程式執行失敗: {e}"
+        traceback_msg = traceback.format_exc()
+        
+        print(f"嚴重錯誤: {error_msg}")
+        print(f"詳細錯誤: {traceback_msg}")
+        logging.error(f"嚴重錯誤: {error_msg}")
+        logging.error(f"詳細錯誤: {traceback_msg}")
+        
+        # 寫入錯誤檔案
+        with open('crash_report.txt', 'w', encoding='utf-8') as f:
+            f.write(f"程式崩潰報告\n")
+            f.write(f"時間: {datetime.now()}\n")
+            f.write(f"錯誤訊息: {error_msg}\n")
+            f.write(f"詳細錯誤:\n{traceback_msg}\n")
+        
+        QMessageBox.critical(None, "錯誤", f"程式執行失敗: {e}\n詳細錯誤已記錄到 crash_report.txt")
 
 
 if __name__ == "__main__":

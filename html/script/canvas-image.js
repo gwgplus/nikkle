@@ -83,8 +83,9 @@ function resizeCanvasToFill() {
 /**
  * 顯示圖片
  * @param {string} imagePath - 圖片路徑
+ * @param {Object} scaleParams - 縮放參數 {scale, offsetX, offsetY}
  */
-function showImage(imagePath) {
+function showImage(imagePath, scaleParams = null) {
   if (!imagePath) {
     alert("圖片路徑不存在");
     showNoImage();
@@ -92,21 +93,31 @@ function showImage(imagePath) {
   }
 
   // 修復路徑格式，將反斜線轉換為正斜線
-  
   const fixedPath = imagePath.replace(/\\/g, "/");
   console.log("原始路徑:", imagePath);
   console.log("修復後路徑:", fixedPath);
-  //alert("修復後路徑: " + fixedPath);
+  
+  // 如果有傳入縮放參數，則應用它們
+  if (scaleParams) {
+    scale = scaleParams.scale || 1.0;
+    offsetX = scaleParams.offsetX || 0;
+    offsetY = scaleParams.offsetY || 0;
+    console.log("應用縮放參數:", {scale, offsetX, offsetY});
+  }
+  
   const img = new Image();
   img.onload = function () {
     currentImage = img;
-    workStatus = "normal";
+    // OCR 完成後，圖片載入時直接進入 StartScale 狀態
+    workStatus = "startScale";
     canvas.style.display = "block";
     document.getElementById("imagePlaceholder").style.display = "none";
 
     // 重新調整 Canvas 尺寸
     resizeCanvasToFill();
     drawImage();
+    
+    console.log("圖片載入完成，進入 StartScale 狀態，縮放參數:", {scale, offsetX, offsetY});
   };
   img.onerror = function () {
     console.error("圖片載入失敗:", fixedPath);
@@ -179,7 +190,7 @@ function drawNoImageState() {
 }
 
 /**
- * 繪製正常圖片
+ * 繪製正常圖片（Normal 狀態）
  */
 function drawNormalImage() {
   if (!currentImage) return;
@@ -190,104 +201,124 @@ function drawNormalImage() {
   const canvasAspectRatio = canvas.width / canvas.height;
   const imageAspectRatio = currentImage.width / currentImage.height;
 
-  let drawWidth, drawHeight, offsetX, offsetY;
+  let drawWidth, drawHeight, imageOffsetX, imageOffsetY;
 
   if (canvasAspectRatio > imageAspectRatio) {
     // Canvas 較寬，以高度填滿
     drawHeight = canvas.height;
     drawWidth = canvas.height * imageAspectRatio;
-    offsetX = (canvas.width - drawWidth) / 2;
-    offsetY = 0;
+    imageOffsetX = (canvas.width - drawWidth) / 2;
+    imageOffsetY = 0;
   } else {
     // Canvas 較高，以寬度填滿
     drawWidth = canvas.width;
     drawHeight = canvas.width / imageAspectRatio;
-    offsetX = 0;
-    offsetY = (canvas.height - drawHeight) / 2;
+    imageOffsetX = 0;
+    imageOffsetY = (canvas.height - drawHeight) / 2;
   }
 
   // 繪製圖片（居中顯示）
-  ctx.drawImage(currentImage, offsetX, offsetY, drawWidth, drawHeight);
+  ctx.drawImage(currentImage, imageOffsetX, imageOffsetY, drawWidth, drawHeight);
 
   // 更新縮放比例
   rate = drawWidth / currentImage.width;
+  
+  console.log("Normal 狀態：圖片居中顯示");
 }
 
 /**
- * 繪製繪製中的線條
+ * 繪製繪製中的線條（Drawing 狀態）
  */
 function drawDrawingLine() {
   ctx.strokeStyle = "#ff0000";
   ctx.lineWidth = 3;
   ctx.beginPath();
 
-  // 根據 C# 程式的邏輯，畫線時需要考慮圖片的縮放和偏移
   // 計算圖片在 Canvas 中的實際位置
   const canvasAspectRatio = canvas.width / canvas.height;
   const imageAspectRatio = currentImage.width / currentImage.height;
 
-  let drawWidth, drawHeight, offsetX, offsetY;
+  let drawWidth, drawHeight, imageOffsetX, imageOffsetY;
 
   if (canvasAspectRatio > imageAspectRatio) {
     drawHeight = canvas.height;
     drawWidth = canvas.height * imageAspectRatio;
-    offsetX = (canvas.width - drawWidth) / 2;
-    offsetY = 0;
+    imageOffsetX = (canvas.width - drawWidth) / 2;
+    imageOffsetY = 0;
   } else {
     drawWidth = canvas.width;
     drawHeight = canvas.width / imageAspectRatio;
-    offsetX = 0;
-    offsetY = (canvas.height - drawHeight) / 2;
+    imageOffsetX = 0;
+    imageOffsetY = (canvas.height - drawHeight) / 2;
   }
 
   // 將滑鼠座標轉換為圖片座標系統
-  const imageStartX = (startPoint.x - offsetX) / rate;
-  const imageStartY = (startPoint.y - offsetY) / rate;
-  const imageEndX = (endPoint.x - offsetX) / rate;
-  const imageEndY = (endPoint.y - offsetY) / rate;
+  const imageStartX = (startPoint.x - imageOffsetX) / rate;
+  const imageStartY = (startPoint.y - imageOffsetY) / rate;
+  const imageEndX = (endPoint.x - imageOffsetX) / rate;
+  const imageEndY = (endPoint.y - imageOffsetY) / rate;
 
-  // 繪製線條（在圖片座標系統中）
-  ctx.moveTo(offsetX + imageStartX * rate, offsetY + imageStartY * rate);
-  ctx.lineTo(offsetX + imageEndX * rate, offsetY + imageEndY * rate);
+  // 繪製紅色線條
+  ctx.moveTo(imageOffsetX + imageStartX * rate, imageOffsetY + imageStartY * rate);
+  ctx.lineTo(imageOffsetX + imageEndX * rate, imageOffsetY + imageEndY * rate);
   ctx.stroke();
+  
+  console.log(`Drawing 狀態：繪製紅色線條從 (${startPoint.x}, ${startPoint.y}) 到 (${endPoint.x}, ${endPoint.y})`);
 }
 
 /**
- * 繪製縮放圖片
+ * 繪製縮放圖片（StartScale 狀態）
  */
 function drawScaledImage() {
-  const oW = currentImage.width * scale;
-  const oH = currentImage.height * scale;
-  ctx.drawImage(currentImage, -offsetX, -offsetY, oW, oH);
+  if (!currentImage) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 計算縮放後的圖片尺寸
+  const scaledWidth = currentImage.width * scale;
+  const scaledHeight = currentImage.height * scale;
+
+  // 計算圖片在 Canvas 中的位置（考慮 offset）
+  const imageX = -offsetX;
+  const imageY = -offsetY;
+
+  // 繪製縮放後的圖片
+  ctx.drawImage(currentImage, imageX, imageY, scaledWidth, scaledHeight);
+  
+  console.log(`StartScale 狀態：scale=${scale}, offsetX=${offsetX}, offsetY=${offsetY}`);
 }
 
 /**
- * 繪製旋轉圖片
+ * 繪製旋轉圖片（ZoomAndRotate 狀態）
  */
 function drawRotatedImage() {
-  // 計算圖片在 Canvas 中的實際位置和尺寸（與 drawNormalImage 一致，保持放大狀態）
+  if (!currentImage) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 計算圖片在 Canvas 中的實際位置和尺寸
   const canvasAspectRatio = canvas.width / canvas.height;
   const imageAspectRatio = currentImage.width / currentImage.height;
 
-  let drawWidth, drawHeight, offsetX, offsetY;
+  let drawWidth, drawHeight, imageOffsetX, imageOffsetY;
 
   if (canvasAspectRatio > imageAspectRatio) {
     drawHeight = canvas.height;
     drawWidth = canvas.height * imageAspectRatio;
-    offsetX = (canvas.width - drawWidth) / 2;
-    offsetY = 0;
+    imageOffsetX = (canvas.width - drawWidth) / 2;
+    imageOffsetY = 0;
   } else {
     drawWidth = canvas.width;
     drawHeight = canvas.width / imageAspectRatio;
-    offsetX = 0;
-    offsetY = (canvas.height - drawHeight) / 2;
+    imageOffsetX = 0;
+    imageOffsetY = (canvas.height - drawHeight) / 2;
   }
 
   // 將滑鼠座標轉換為原圖座標系統
-  const imageStartX = (startPoint.x - offsetX) / rate;
-  const imageStartY = (startPoint.y - offsetY) / rate;
-  const imageEndX = (endPoint.x - offsetX) / rate;
-  const imageEndY = (endPoint.y - offsetY) / rate;
+  const imageStartX = (startPoint.x - imageOffsetX) / rate;
+  const imageStartY = (startPoint.y - imageOffsetY) / rate;
+  const imageEndX = (endPoint.x - imageOffsetX) / rate;
+  const imageEndY = (endPoint.y - imageOffsetY) / rate;
 
   // 計算畫線的中央點在原圖中的位置
   const centerPoint = {
@@ -296,17 +327,14 @@ function drawRotatedImage() {
   };
 
   // 計算旋轉後原圖的顯示區域
-  // 以紅線中心點為基準，計算要顯示的圖片區域
   const rotatedImageWidth = currentImage.width;
   const rotatedImageHeight = currentImage.height;
 
   // 計算旋轉後原圖在 Canvas 中的顯示位置
-  // 目標是讓紅線中心點位於 Canvas 正中間
   const targetCenterX = canvas.width / 2;
   const targetCenterY = canvas.height / 2;
 
   // 計算旋轉後原圖的左上角位置，使紅線中心點位於 Canvas 正中間
-  // 注意：這裡使用原圖座標系統，不需要乘以 rate
   const rotatedOffsetX = targetCenterX - centerPoint.x;
   const rotatedOffsetY = targetCenterY - centerPoint.y;
 
@@ -331,6 +359,8 @@ function drawRotatedImage() {
   );
 
   ctx.restore();
+  
+  console.log(`ZoomAndRotate 狀態：角度=${angle}度，中心點=(${centerPoint.x}, ${centerPoint.y})`);
 }
 
 /**
@@ -340,18 +370,18 @@ function drawRotatedImage() {
 function handleMouseDown(e) {
   if (e.button === 0) {
     // 左鍵
-    // 允許在任何狀態下開始畫線（除了 none 狀態）
     if (workStatus === "none") return;
 
-    if (workStatus === "zoomAndRotate") {
-      // 在放大狀態下按左鍵：回到一般顯示
+    if (workStatus === "startScale") {
+      // 在 StartScale 狀態下按左鍵：轉換到 Normal 狀態
       workStatus = "normal";
+      console.log("從 StartScale 轉換到 Normal 狀態");
       drawImage();
       return;
     }
 
     if (workStatus === "normal") {
-      // 在一般狀態下按左鍵：開始畫線
+      // 在 Normal 狀態下按左鍵：開始畫線（Drawing 狀態）
       const rect = canvas.getBoundingClientRect();
       startPoint = {
         x: e.clientX - rect.left,
@@ -360,6 +390,27 @@ function handleMouseDown(e) {
       endPoint = { ...startPoint };
       workStatus = "drawing";
       console.log("開始畫線，起始點:", startPoint);
+      drawImage();
+    }
+
+    if (workStatus === "zoomAndRotate") {
+      // 在 ZoomAndRotate 狀態下按左鍵：回到 Normal 狀態
+      workStatus = "normal";
+      console.log("從 ZoomAndRotate 轉換到 Normal 狀態");
+      drawImage();
+      return;
+    }
+  } else if (e.button === 2) {
+    // 右鍵
+    if (workStatus === "startScale") {
+      // 在 StartScale 狀態下按右鍵：轉換到 Normal 狀態
+      workStatus = "normal";
+      console.log("右鍵點擊：從 StartScale 轉換到 Normal 狀態");
+      drawImage();
+    } else if (workStatus === "zoomAndRotate") {
+      // 在 ZoomAndRotate 狀態下按右鍵：回到 Normal 狀態
+      workStatus = "normal";
+      console.log("右鍵點擊：從 ZoomAndRotate 轉換到 Normal 狀態");
       drawImage();
     }
   }
@@ -372,17 +423,18 @@ function handleMouseDown(e) {
 function handleMouseUp(e) {
   if (workStatus !== "drawing") return;
 
-  // 完成畫線，計算角度並進入放大狀態
+  // 完成畫線，計算角度並進入 ZoomAndRotate 狀態
   if (startPoint.x !== endPoint.x || startPoint.y !== endPoint.y) {
     const xDiff = endPoint.x - startPoint.x;
     const yDiff = endPoint.y - startPoint.y;
     angle = (Math.atan2(yDiff, xDiff) * 180) / Math.PI;
     workStatus = "zoomAndRotate";
-    console.log("完成畫線，角度:", angle);
+    console.log("完成畫線，角度:", angle, "轉換到 ZoomAndRotate 狀態");
     drawImage();
   } else {
-    // 如果起始點和結束點相同，回到一般狀態
+    // 如果起始點和結束點相同，回到 Normal 狀態
     workStatus = "normal";
+    console.log("起始點和結束點相同，回到 Normal 狀態");
     drawImage();
   }
 }
@@ -426,6 +478,57 @@ function setScaleParams(newScale, newOffsetX, newOffsetY) {
   drawImage();
 }
 
+/**
+ * 從後端獲取設定並應用 Scale offset
+ */
+function loadAndApplySettings() {
+  if (typeof api !== 'undefined' && api.get_settings) {
+    api.get_settings(function(result) {
+      try {
+        const response = JSON.parse(result);
+        if (response.success) {
+          const settings = response.data;
+          // 應用圖片設定
+          if (settings.image) {
+            scale = settings.image.scale || 1.0;
+            offsetX = settings.image.offset_x || 0;
+            offsetY = settings.image.offset_y || 0;
+            console.log(`載入設定：scale=${scale}, offsetX=${offsetX}, offsetY=${offsetY}`);
+          }
+        }
+      } catch (error) {
+        console.error("載入設定失敗:", error);
+      }
+    });
+  }
+}
+
+/**
+ * 應用縮放參數到當前圖片
+ */
+function applyScaleParams(scaleParams) {
+  if (scaleParams) {
+    scale = scaleParams.scale || 1.0;
+    offsetX = scaleParams.offsetX || 0;
+    offsetY = scaleParams.offsetY || 0;
+    console.log(`應用縮放參數：scale=${scale}, offsetX=${offsetX}, offsetY=${offsetY}`);
+    
+    // 如果當前有圖片，重新繪製
+    if (currentImage) {
+      drawImage();
+    }
+  }
+}
+
+/**
+ * 重置圖片狀態到 StartScale
+ */
+function resetToStartScale() {
+  workStatus = "startScale";
+  drawImage();
+  console.log("重置到 StartScale 狀態");
+}
+
 // 將函數暴露到全域範圍，以便其他模組可以調用
 window.CanvasImage = {
   initCanvas,
@@ -433,5 +536,8 @@ window.CanvasImage = {
   showNoImage,
   setWorkStatus,
   setScaleParams,
-  resizeCanvasToFill
+  resizeCanvasToFill,
+  loadAndApplySettings,
+  applyScaleParams,
+  resetToStartScale
 };

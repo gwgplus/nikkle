@@ -5,11 +5,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>靶材印字檢測OCR3.0</title>
-    <link rel="stylesheet" href="login.css" />
     <link rel="stylesheet" href="frmmain.css" />
   </head>
 
-  <body>
+  <body class="login-mode">
     <div class="login-container">
       <div class="login-box">
         <div class="login-header">
@@ -54,6 +53,8 @@
           <button class="header-btn" id="btnExport">匯出</button>
           <button class="header-btn" id="btnOperator">操作員</button>
           <button class="header-btn" id="btnAccount">帳號</button>
+          <button class="header-btn" id="btnSwitch">切換顯示</button>
+          <button class="header-btn" id="btnLogout">登出</button>
         </div>
       </div>
 
@@ -404,6 +405,7 @@
                 updateUserInfo(user_data);
                 console.log("自動登入成功");
                 // 切換到主視窗
+                $("body").removeClass("login-mode").addClass("main-mode");
                 $(".login-container").hide();
                 $(".main-window").show();
               } else {
@@ -444,9 +446,11 @@
         // 條碼輸入事件
         $("#txtCode1").on("input", function() {
           const value = $(this).val();
-          if (value.endsWith("/r")) {
-            // 移除 /r 並更新值
-            const newValue = value.slice(0, -2);
+          console.log("Code1 input event triggered, value:", value);
+          if (value.endsWith("\r")) {
+            console.log("Code1: Enter key detected, jumping to Code2");
+            // 移除 \r 並更新值
+            const newValue = value.slice(0, -1);
             $(this).val(newValue);
             currentTestData.code1 = newValue;
             $("#lblBarCode1").text(newValue || "等待輸入");
@@ -458,11 +462,24 @@
             checkCodeConsistency();
           }
         });
+        
+        // 添加 keypress 事件處理
+        $("#txtCode1").on("keypress", function(e) {
+          console.log("Code1 keypress event:", e.which, e.key);
+          if (e.which === 13) { // Enter 鍵
+            e.preventDefault();
+            console.log("Code1: Enter key pressed, jumping to Code2");
+            $("#txtCode2").focus();
+          }
+        });
+        
         $("#txtCode2").on("input", function() {
           const value = $(this).val();
-          if (value.endsWith("/r")) {
-            // 移除 /r 並更新值
-            const newValue = value.slice(0, -2);
+          console.log("Code2 input event triggered, value:", value);
+          if (value.endsWith("\r")) {
+            console.log("Code2: Enter key detected, starting test");
+            // 移除 \r 並更新值
+            const newValue = value.slice(0, -1);
             $(this).val(newValue);
             currentTestData.code2 = newValue;
             $("#lblBarCode2").text(newValue || "等待輸入");
@@ -472,6 +489,42 @@
             currentTestData.code2 = value;
             $("#lblBarCode2").text(value || "等待輸入");
             checkCodeConsistency();
+          }
+        });
+        
+        // 添加 keypress 事件處理
+        $("#txtCode2").on("keypress", function(e) {
+          console.log("Code2 keypress event:", e.which, e.key);
+          if (e.which === 13) { // Enter 鍵
+            e.preventDefault();
+            console.log("Code2: Enter key pressed, starting test");
+            $("#btnStart").trigger("click");
+          }
+        });
+        
+        // 檢查特殊字元並轉換（使用 keyup 事件，避免與 input 事件衝突）
+        $(".code-input").on("keyup", function() {
+          let value = $(this).val().toUpperCase();
+          let originalValue = value;
+          
+          // 特殊字符轉換
+          if(value.includes('!')) value = value.replace(/!/g, '1');
+          if(value.includes('@')) value = value.replace(/@/g, '2'); 
+          if(value.includes('#')) value = value.replace(/#/g, '3');
+          if(value.includes('$')) value = value.replace(/\$/g, '4');
+          if(value.includes('%')) value = value.replace(/%/g, '5');
+          if(value.includes('^')) value = value.replace(/\^/g, '6');
+          if(value.includes('&')) value = value.replace(/&/g, '7');
+          if(value.includes('*')) value = value.replace(/\*/g, '8');
+          if(value.includes('(')) value = value.replace(/\(/g, '9');
+          if(value.includes(')')) value = value.replace(/\)/g, '0');
+          
+          // 只有當值真的改變時才更新
+          if (value !== originalValue) {
+            console.log("特殊字符轉換:", originalValue, "->", value);
+            $(this).val(value);
+            // 手動觸發 input 事件來更新顯示和檢查一致性
+            $(this).trigger('input');
           }
         });
         // 檢查條碼一致性
@@ -521,7 +574,19 @@
           $("#txtCode1").prop("readonly", true);
           $("#txtCode2").prop("readonly", true);
           $("#txtOCRResult").val("開始檢測");
-          api.start_ocr_test(JSON.stringify(testData)); // 開始 OCR 測試
+          
+          console.log("UI 已更新：開始檢測");
+          
+          // 載入設定並開始 OCR 測試
+          if (typeof CanvasImage !== 'undefined' && CanvasImage.loadAndApplySettings) {
+            CanvasImage.loadAndApplySettings();
+          }
+          
+          // 使用 setTimeout 確保 UI 更新後再執行 API 調用
+          setTimeout(function() {
+            console.log("開始調用 API");
+            api.start_ocr_test(JSON.stringify(testData)); // 開始 OCR 測試
+          }, 100); // 延遲 100ms 確保 UI 更新
         }
         // 處理 OCR 結果
         function handleOCRResult(result) {
@@ -604,6 +669,7 @@
           
           $("#selectText").hide();
           hideAllPanels();
+          $("#txtCode1").focus();
         }
         // 判定按鈕事件
         $("#btnAllow").on("click", function() {
@@ -847,6 +913,7 @@
             updateUserInfo(user_data);
             console.log("登入成功");
             // 切換到主視窗
+            $("body").removeClass("login-mode").addClass("main-mode");
             $(".login-container").hide();
             $(".main-window").show();
           } else {
@@ -857,6 +924,17 @@
         }
 
         //////////////////////////////////////////////////////////////
+        // 執行登出
+        //////////////////////////////////////////////////////////////
+        function performLogout() {
+          console.log("登出按鈕被點擊");
+          
+          // 切換到登入視窗（反向登入流程）
+          $("body").removeClass("main-mode").addClass("login-mode");
+          $(".main-window").hide();
+          $(".login-container").show();
+        }
+
         // 執行登入
         //////////////////////////////////////////////////////////////
         function performLogin() {
@@ -957,6 +1035,7 @@
               // 儲存登入資訊到 localStorage（可選）
               localStorage.setItem("loginInfo", JSON.stringify(user_data));
               // 切換到主視窗
+              $("body").removeClass("login-mode").addClass("main-mode");
               $(".login-container").hide();
               $(".main-window").show();
               console.log("已切換到主視窗");
@@ -1122,6 +1201,59 @@
                   })
                 );
               }
+            });
+          $("#btnSwitch")
+            .off("click")
+            .on("click", function() {
+              console.log("切換顯示按鈕被點擊");
+              try {
+                const result = api.toggle_full_screen("");
+                console.log("切換顯示結果:", result);
+                console.log("結果類型:", typeof result);
+                console.log("結果內容:", JSON.stringify(result));
+                
+                // 檢查 result 是否為 undefined 或 null
+                if (result === undefined || result === null) {
+                  console.error("API 返回結果為空");
+                  showMessage("切換失敗：伺服器無回應", "error");
+                  return;
+                }
+                
+                // 解析結果
+                let response;
+                if (typeof result === 'string') {
+                  response = JSON.parse(result);
+                } else if (typeof result === 'object') {
+                  response = result;
+                } else {
+                  console.error("無法處理的結果類型:", typeof result);
+                  showMessage("切換失敗：結果格式錯誤", "error");
+                  return;
+                }
+                
+                console.log("解析後的 response:", response);
+                
+                if (response && response.success) {
+                  console.log("已切換到模式:", response.mode);
+                  if (response.mode === 'fullscreen') {
+                    showMessage("已切換到全螢幕模式", "info");
+                  } else {
+                    showMessage("已切換到最大化視窗模式", "info");
+                  }
+                } else {
+                  console.error("切換失敗:", response ? response.error : "response 為空");
+                  showMessage("切換失敗: " + (response ? response.error : "未知錯誤"), "error");
+                }
+              } catch (error) {
+                console.error("切換顯示失敗:", error);
+                showMessage("切換顯示失敗: " + error.message, "error");
+              }
+            });
+          $("#btnLogout")
+            .off("click")
+            .on("click", function() {
+              console.log("登出按鈕被點擊");
+              performLogout();
             });
           // 操作員面板按鈕事件
           $("#btnOperator_OK")
